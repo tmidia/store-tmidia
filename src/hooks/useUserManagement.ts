@@ -3,51 +3,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
-import type { Database } from '@/integrations/supabase/types';
 
 export const useUserManagement = () => {
   const [users, setUsers] = useState<UserWithPermissions[]>([]);
-  const [lastSignupAttempt, setLastSignupAttempt] = useState<number | null>(null);
-  const [remainingTime, setRemainingTime] = useState(0);
   const { toast } = useToast();
 
   const capitalizeWords = (str: string) => {
     return str.replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  const isWithinRateLimit = () => {
-    if (!lastSignupAttempt) return true;
-    const timeSinceLastAttempt = Date.now() - lastSignupAttempt;
-    return timeSinceLastAttempt >= 45000; // 45 seconds
-  };
-
-  const updateRemainingTime = () => {
-    if (!lastSignupAttempt) {
-      setRemainingTime(0);
-      return;
-    }
-    const timeSinceLastAttempt = Date.now() - lastSignupAttempt;
-    const remaining = Math.max(0, 45000 - timeSinceLastAttempt);
-    setRemainingTime(Math.ceil(remaining / 1000));
-    
-    if (remaining <= 0) {
-      setLastSignupAttempt(null);
-    }
-  };
-
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (lastSignupAttempt && !isWithinRateLimit()) {
-      interval = setInterval(updateRemainingTime, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [lastSignupAttempt]);
 
   const fetchUsers = async () => {
     try {
@@ -78,8 +45,6 @@ export const useUserManagement = () => {
   };
 
   const createUser = async (formData: UserFormData) => {
-    setLastSignupAttempt(Date.now());
-
     const capitalizedName = capitalizeWords(formData.full_name);
 
     console.log('Tentando criar usuário:', { email: formData.email, username: formData.username });
@@ -208,15 +173,6 @@ export const useUserManagement = () => {
   };
 
   const handleSubmit = async (editingUser: UserWithPermissions | null, formData: UserFormData) => {
-    if (!editingUser && !isWithinRateLimit()) {
-      toast({
-        title: "Limite de segurança ativo",
-        description: `Por segurança, aguarde ${remainingTime} segundos antes de tentar criar outro usuário.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       if (editingUser) {
         await updateUser(editingUser, formData);
@@ -230,9 +186,7 @@ export const useUserManagement = () => {
       
       let errorMessage = "Erro ao salvar usuário.";
       
-      if (error.message.includes('45 seconds') || error.message.includes('rate limit')) {
-        errorMessage = "Por segurança, aguarde 45 segundos antes de tentar criar outro usuário.";
-      } else if (error.message.includes('User already registered')) {
+      if (error.message.includes('User already registered')) {
         errorMessage = "Este email já está cadastrado no sistema.";
       } else if (error.message.includes('invalid email')) {
         errorMessage = "Por favor, insira um email válido.";
@@ -254,9 +208,6 @@ export const useUserManagement = () => {
 
   return {
     users,
-    lastSignupAttempt,
-    remainingTime,
-    isWithinRateLimit,
     handleSubmit,
     toggleUserStatus,
     fetchUsers

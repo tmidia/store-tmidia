@@ -13,8 +13,6 @@ const UserManagement = () => {
   
   const {
     users,
-    remainingTime,
-    isWithinRateLimit,
     handleSubmit,
     toggleUserStatus
   } = useUserManagement();
@@ -32,8 +30,6 @@ const UserManagement = () => {
     setEditingUser(user);
   };
 
-  const canCreateUser = isWithinRateLimit();
-
   return (
     <Card>
       <CardHeader>
@@ -45,8 +41,8 @@ const UserManagement = () => {
           <UserFormDialog
             editingUser={editingUser}
             isSubmitting={isSubmitting}
-            canCreateUser={canCreateUser}
-            remainingTime={remainingTime}
+            canCreateUser={true}
+            remainingTime={0}
             onSubmit={handleFormSubmit}
             onEditingUserChange={setEditingUser}
           />
