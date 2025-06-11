@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState<UserWithPermissions | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSignupAttempt, setLastSignupAttempt] = useState<number | null>(null);
+  const [remainingTime, setRemainingTime] = useState(0);
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
@@ -51,16 +53,33 @@ const UserManagement = () => {
     return timeSinceLastAttempt >= 45000; // 45 seconds
   };
 
-  const getRemainingTime = () => {
-    if (!lastSignupAttempt) return 0;
+  const updateRemainingTime = () => {
+    if (!lastSignupAttempt) {
+      setRemainingTime(0);
+      return;
+    }
     const timeSinceLastAttempt = Date.now() - lastSignupAttempt;
     const remaining = Math.max(0, 45000 - timeSinceLastAttempt);
-    return Math.ceil(remaining / 1000);
+    setRemainingTime(Math.ceil(remaining / 1000));
+    
+    if (remaining <= 0) {
+      setLastSignupAttempt(null);
+    }
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (lastSignupAttempt && !isWithinRateLimit()) {
+      interval = setInterval(updateRemainingTime, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [lastSignupAttempt]);
 
   const fetchUsers = async () => {
     try {
@@ -94,10 +113,9 @@ const UserManagement = () => {
     e.preventDefault();
     
     if (!editingUser && !isWithinRateLimit()) {
-      const remainingSeconds = getRemainingTime();
       toast({
         title: "Limite de segurança ativo",
-        description: `Por segurança, aguarde ${remainingSeconds} segundos antes de tentar criar outro usuário.`,
+        description: `Por segurança, aguarde ${remainingTime} segundos antes de tentar criar outro usuário.`,
         variant: "destructive",
       });
       return;
@@ -160,16 +178,8 @@ const UserManagement = () => {
         });
 
         if (authError) {
-          if (authError.message.includes('45 seconds') || authError.message.includes('rate limit')) {
-            toast({
-              title: "Limite de segurança ativo",
-              description: "Por segurança, aguarde 45 segundos antes de tentar criar outro usuário.",
-              variant: "destructive",
-            });
-          } else {
-            throw authError;
-          }
-          return;
+          console.error('Erro de autenticação:', authError);
+          throw authError;
         }
 
         if (authData.user) {
@@ -183,7 +193,10 @@ const UserManagement = () => {
               user_type: formData.user_type
             });
 
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error('Erro ao criar perfil:', profileError);
+            throw profileError;
+          }
 
           // Adicionar permissões
           if (formData.permissions.length > 0) {
@@ -192,9 +205,13 @@ const UserManagement = () => {
               module: module as any
             }));
 
-            await supabase
+            const { error: permissionsError } = await supabase
               .from('user_permissions')
               .insert(permissions);
+
+            if (permissionsError) {
+              console.error('Erro ao criar permissões:', permissionsError);
+            }
           }
         }
 
@@ -211,6 +228,7 @@ const UserManagement = () => {
       console.error('Erro ao salvar usuário:', error);
       
       let errorMessage = "Erro ao salvar usuário.";
+      
       if (error.message.includes('45 seconds') || error.message.includes('rate limit')) {
         errorMessage = "Por segurança, aguarde 45 segundos antes de tentar criar outro usuário.";
       } else if (error.message.includes('User already registered')) {
@@ -219,6 +237,8 @@ const UserManagement = () => {
         errorMessage = "Por favor, insira um email válido.";
       } else if (error.message.includes('password')) {
         errorMessage = "A senha deve ter pelo menos 6 caracteres.";
+      } else if (error.message.includes('Username should be') || error.message.includes('unique')) {
+        errorMessage = "Este nome de usuário já existe. Escolha outro.";
       }
 
       toast({
@@ -290,7 +310,6 @@ const UserManagement = () => {
   };
 
   const canCreateUser = isWithinRateLimit();
-  const remainingTime = getRemainingTime();
 
   return (
     <Card>
