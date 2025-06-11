@@ -99,7 +99,7 @@ const Produtos = () => {
         {filteredProducts.map(produto => (
           <ProductCard
             key={produto.id}
-            product={produto}
+            product={produto as any}
             onEdit={handleEditProduct}
             onDelete={deleteProduct}
           />

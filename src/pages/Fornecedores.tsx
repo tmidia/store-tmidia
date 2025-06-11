@@ -101,7 +101,7 @@ const Fornecedores = () => {
         {filteredSuppliers.map(fornecedor => (
           <SupplierCard
             key={fornecedor.id}
-            supplier={fornecedor}
+            supplier={fornecedor as any}
             onEdit={handleEditSupplier}
             onDelete={deleteFornecedor}
           />
