@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,7 @@ interface SupplierDialogProps {
   isOpen: boolean;
   onClose: () => void;
   supplier: Supplier | null;
-  onSave: () => void;
+  onSave: (supplierData: any) => void;
 }
 
 const SupplierDialog = ({ isOpen, onClose, supplier, onSave }: SupplierDialogProps) => {
@@ -170,33 +169,7 @@ const SupplierDialog = ({ isOpen, onClose, supplier, onSave }: SupplierDialogPro
         zip_code: formData.zip_code || null
       };
 
-      if (supplier) {
-        const { error } = await supabase
-          .from('suppliers')
-          .update(supplierData)
-          .eq('id', supplier.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Fornecedor atualizado",
-          description: "As informações do fornecedor foram atualizadas com sucesso.",
-        });
-      } else {
-        const { error } = await supabase
-          .from('suppliers')
-          .insert(supplierData);
-
-        if (error) throw error;
-
-        toast({
-          title: "Fornecedor criado",
-          description: "O fornecedor foi criado com sucesso.",
-        });
-      }
-
-      onSave();
-      onClose();
+      onSave(supplierData);
     } catch (error: any) {
       toast({
         title: "Erro",
