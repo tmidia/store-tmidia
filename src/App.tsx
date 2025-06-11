@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,6 +16,9 @@ import PDV from "./pages/PDV";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./components/UserProfile";
 import ChangePasswordForm from "./components/ChangePasswordForm";
+import Estoque from "./pages/Estoque";
+import Fornecedores from "./pages/Fornecedores";
+import Categorias from "./pages/Categorias";
 
 const queryClient = new QueryClient();
 
@@ -108,10 +112,21 @@ const App = () => (
           <Route path="/estoque" element={
             <ProtectedRoute>
               <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Estoque</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                </div>
+                <Estoque />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/fornecedores" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Fornecedores />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/categorias" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Categorias />
               </MainLayout>
             </ProtectedRoute>
           } />

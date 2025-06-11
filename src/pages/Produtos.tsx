@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,103 +11,193 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Edit, 
   Trash2, 
   Package,
-  BarChart3,
   DollarSign
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Product {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  category_id?: string;
+  supplier_id?: string;
+  cost_price: number;
+  sale_price: number;
+  stock_quantity: number;
+  minimum_stock: number;
+  categories?: { name: string };
+  suppliers?: { name: string };
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+}
 
 const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [produtos, setProdutos] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Dados simulados
-  const [produtos, setProdutos] = useState([
-    {
-      id: 1,
-      nome: 'Capa iPhone 14 Pro',
-      categoria: 'Acessórios',
-      codigo: '001',
-      precoVenda: 29.90,
-      precoCusto: 15.00,
-      estoque: 25,
-      estoqueMinimo: 10,
-      fornecedor: 'Tech Acessórios',
-      descricao: 'Capa transparente para iPhone 14 Pro'
-    },
-    {
-      id: 2,
-      nome: 'Chinelo Havaianas',
-      categoria: 'Calçados',
-      codigo: '002',
-      precoVenda: 35.00,
-      precoCusto: 20.00,
-      estoque: 8,
-      estoqueMinimo: 15,
-      fornecedor: 'Distribuidora Brasil',
-      descricao: 'Chinelo Havaianas tradicional'
-    },
-    {
-      id: 3,
-      nome: 'Copo Térmico Personalizado',
-      categoria: 'Presentes',
-      codigo: '003',
-      precoVenda: 45.00,
-      precoCusto: 25.00,
-      estoque: 12,
-      estoqueMinimo: 8,
-      fornecedor: 'Presentes & Cia',
-      descricao: 'Copo térmico 500ml com personalização'
-    }
-  ]);
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    fetchSuppliers();
+  }, []);
 
-  const categorias = ['Acessórios', 'Calçados', 'Presentes', 'Eletrônicos', 'Roupas'];
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories(name),
+          suppliers(name)
+        `);
 
-  const handleSaveProduct = (productData) => {
-    if (editingProduct) {
-      setProdutos(produtos.map(p => p.id === editingProduct.id ? { ...productData, id: editingProduct.id } : p));
+      if (error) throw error;
+      setProdutos(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
       toast({
-        title: "Produto atualizado!",
-        description: "As alterações foram salvas com sucesso.",
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar a lista de produtos.",
+        variant: "destructive",
       });
-    } else {
-      const newProduct = { ...productData, id: Date.now() };
-      setProdutos([...produtos, newProduct]);
-      toast({
-        title: "Produto cadastrado!",
-        description: "Novo produto adicionado ao estoque.",
-      });
+    } finally {
+      setLoading(false);
     }
-    setIsDialogOpen(false);
-    setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (id) => {
-    setProdutos(produtos.filter(p => p.id !== id));
-    toast({
-      title: "Produto removido!",
-      description: "O produto foi excluído do sistema.",
-      variant: "destructive",
-    });
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar fornecedores:', error);
+    }
+  };
+
+  const handleSaveProduct = async (productData: any) => {
+    try {
+      if (editingProduct) {
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Produto atualizado!",
+          description: "As alterações foram salvas com sucesso.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .insert([productData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Produto cadastrado!",
+          description: "Novo produto adicionado ao estoque.",
+        });
+      }
+      
+      setIsDialogOpen(false);
+      setEditingProduct(null);
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao salvar produto:', error);
+      toast({
+        title: "Erro ao salvar produto",
+        description: "Não foi possível salvar o produto. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Produto removido!",
+        description: "O produto foi excluído do sistema.",
+        variant: "destructive",
+      });
+      
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao excluir produto:', error);
+      toast({
+        title: "Erro ao excluir produto",
+        description: "Não foi possível excluir o produto. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredProducts = produtos.filter(produto => {
-    const matchesSearch = produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         produto.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || produto.categoria === selectedCategory;
+    const matchesSearch = produto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         produto.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || produto.category_id === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const getStockStatus = (estoque, estoqueMinimo) => {
+  const getStockStatus = (estoque: number, estoqueMinimo: number) => {
     if (estoque === 0) return { label: 'Sem estoque', color: 'bg-red-100 text-red-800' };
     if (estoque <= estoqueMinimo) return { label: 'Estoque baixo', color: 'bg-orange-100 text-orange-800' };
     return { label: 'Normal', color: 'bg-green-100 text-green-800' };
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -126,7 +216,8 @@ const Produtos = () => {
           </DialogTrigger>
           <ProductDialog 
             product={editingProduct} 
-            categorias={categorias}
+            categories={categories}
+            suppliers={suppliers}
             onSave={handleSaveProduct}
             onClose={() => setIsDialogOpen(false)}
           />
@@ -155,8 +246,8 @@ const Produtos = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categorias.map(categoria => (
-                    <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
+                  {categories.map(categoria => (
+                    <SelectItem key={categoria.id} value={categoria.id}>{categoria.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -168,19 +259,19 @@ const Produtos = () => {
       {/* Lista de Produtos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map(produto => {
-          const stockStatus = getStockStatus(produto.estoque, produto.estoqueMinimo);
+          const stockStatus = getStockStatus(produto.stock_quantity, produto.minimum_stock);
           return (
             <Card key={produto.id} className="border-0 shadow-md bg-white hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg font-semibold text-gray-900">
-                      {produto.nome}
+                      {produto.name}
                     </CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">Código: {produto.codigo}</p>
+                    <p className="text-sm text-gray-600 mt-1">Código: {produto.code}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">
-                    {produto.categoria}
+                    {produto.categories?.name || 'Sem categoria'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -191,14 +282,14 @@ const Produtos = () => {
                     <DollarSign className="w-4 h-4 text-green-600" />
                     <div>
                       <p className="text-xs text-gray-600">Preço</p>
-                      <p className="font-semibold text-green-600">R$ {produto.precoVenda.toFixed(2)}</p>
+                      <p className="font-semibold text-green-600">R$ {produto.sale_price.toFixed(2)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Package className="w-4 h-4 text-blue-600" />
                     <div>
                       <p className="text-xs text-gray-600">Estoque</p>
-                      <p className="font-semibold text-gray-900">{produto.estoque} un.</p>
+                      <p className="font-semibold text-gray-900">{produto.stock_quantity} un.</p>
                     </div>
                   </div>
                 </div>
@@ -211,10 +302,10 @@ const Produtos = () => {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full ${
-                          produto.estoque <= produto.estoqueMinimo ? 'bg-orange-500' : 'bg-green-500'
+                          produto.stock_quantity <= produto.minimum_stock ? 'bg-orange-500' : 'bg-green-500'
                         }`}
                         style={{ 
-                          width: `${Math.min((produto.estoque / (produto.estoqueMinimo * 2)) * 100, 100)}%` 
+                          width: `${Math.min((produto.stock_quantity / (produto.minimum_stock * 2)) * 100, 100)}%` 
                         }}
                       ></div>
                     </div>
@@ -263,27 +354,35 @@ const Produtos = () => {
 };
 
 // Componente do Dialog para adicionar/editar produtos
-const ProductDialog = ({ product, categorias, onSave, onClose }) => {
+const ProductDialog = ({ product, categories, suppliers, onSave, onClose }: {
+  product: Product | null;
+  categories: Category[];
+  suppliers: Supplier[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
   const [formData, setFormData] = useState({
-    nome: product?.nome || '',
-    categoria: product?.categoria || '',
-    codigo: product?.codigo || '',
-    precoVenda: product?.precoVenda || '',
-    precoCusto: product?.precoCusto || '',
-    estoque: product?.estoque || '',
-    estoqueMinimo: product?.estoqueMinimo || '',
-    fornecedor: product?.fornecedor || '',
-    descricao: product?.descricao || ''
+    name: product?.name || '',
+    category_id: product?.category_id || '',
+    code: product?.code || '',
+    sale_price: product?.sale_price || '',
+    cost_price: product?.cost_price || '',
+    stock_quantity: product?.stock_quantity || '',
+    minimum_stock: product?.minimum_stock || '',
+    supplier_id: product?.supplier_id || '',
+    description: product?.description || ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
       ...formData,
-      precoVenda: parseFloat(formData.precoVenda),
-      precoCusto: parseFloat(formData.precoCusto),
-      estoque: parseInt(formData.estoque),
-      estoqueMinimo: parseInt(formData.estoqueMinimo)
+      sale_price: parseFloat(formData.sale_price.toString()),
+      cost_price: parseFloat(formData.cost_price.toString()),
+      stock_quantity: parseInt(formData.stock_quantity.toString()),
+      minimum_stock: parseInt(formData.minimum_stock.toString()),
+      category_id: formData.category_id || null,
+      supplier_id: formData.supplier_id || null
     });
   };
 
@@ -298,20 +397,20 @@ const ProductDialog = ({ product, categorias, onSave, onClose }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="nome">Nome do Produto *</Label>
+            <Label htmlFor="name">Nome do Produto *</Label>
             <Input
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
             />
           </div>
           <div>
-            <Label htmlFor="codigo">Código *</Label>
+            <Label htmlFor="code">Código *</Label>
             <Input
-              id="codigo"
-              value={formData.codigo}
-              onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+              id="code"
+              value={formData.code}
+              onChange={(e) => setFormData({...formData, code: e.target.value})}
               required
             />
           </div>
@@ -319,82 +418,87 @@ const ProductDialog = ({ product, categorias, onSave, onClose }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="categoria">Categoria *</Label>
-            <Select value={formData.categoria} onValueChange={(value) => setFormData({...formData, categoria: value})}>
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={formData.category_id} onValueChange={(value) => setFormData({...formData, category_id: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
               <SelectContent>
-                {categorias.map(categoria => (
-                  <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
+                {categories.map(categoria => (
+                  <SelectItem key={categoria.id} value={categoria.id}>{categoria.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="fornecedor">Fornecedor</Label>
+            <Label htmlFor="supplier">Fornecedor</Label>
+            <Select value={formData.supplier_id} onValueChange={(value) => setFormData({...formData, supplier_id: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o fornecedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map(supplier => (
+                  <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="cost_price">Preço de Custo *</Label>
             <Input
-              id="fornecedor"
-              value={formData.fornecedor}
-              onChange={(e) => setFormData({...formData, fornecedor: e.target.value})}
+              id="cost_price"
+              type="number"
+              step="0.01"
+              value={formData.cost_price}
+              onChange={(e) => setFormData({...formData, cost_price: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="sale_price">Preço de Venda *</Label>
+            <Input
+              id="sale_price"
+              type="number"
+              step="0.01"
+              value={formData.sale_price}
+              onChange={(e) => setFormData({...formData, sale_price: e.target.value})}
+              required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="precoCusto">Preço de Custo *</Label>
+            <Label htmlFor="stock_quantity">Quantidade em Estoque *</Label>
             <Input
-              id="precoCusto"
+              id="stock_quantity"
               type="number"
-              step="0.01"
-              value={formData.precoCusto}
-              onChange={(e) => setFormData({...formData, precoCusto: e.target.value})}
+              value={formData.stock_quantity}
+              onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
               required
             />
           </div>
           <div>
-            <Label htmlFor="precoVenda">Preço de Venda *</Label>
+            <Label htmlFor="minimum_stock">Estoque Mínimo *</Label>
             <Input
-              id="precoVenda"
+              id="minimum_stock"
               type="number"
-              step="0.01"
-              value={formData.precoVenda}
-              onChange={(e) => setFormData({...formData, precoVenda: e.target.value})}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="estoque">Quantidade em Estoque *</Label>
-            <Input
-              id="estoque"
-              type="number"
-              value={formData.estoque}
-              onChange={(e) => setFormData({...formData, estoque: e.target.value})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="estoqueMinimo">Estoque Mínimo *</Label>
-            <Input
-              id="estoqueMinimo"
-              type="number"
-              value={formData.estoqueMinimo}
-              onChange={(e) => setFormData({...formData, estoqueMinimo: e.target.value})}
+              value={formData.minimum_stock}
+              onChange={(e) => setFormData({...formData, minimum_stock: e.target.value})}
               required
             />
           </div>
         </div>
 
         <div>
-          <Label htmlFor="descricao">Descrição</Label>
+          <Label htmlFor="description">Descrição</Label>
           <Textarea
-            id="descricao"
-            value={formData.descricao}
-            onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({...formData, description: e.target.value})}
             placeholder="Descrição detalhada do produto..."
           />
         </div>
