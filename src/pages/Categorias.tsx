@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Plus, 
   Search, 
@@ -15,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import CategoryDialog from '@/components/CategoryDialog';
 
 interface Category {
   id: string;
@@ -148,11 +147,6 @@ const Categorias = () => {
               Nova Categoria
             </Button>
           </DialogTrigger>
-          <CategoryDialog 
-            category={editingCategory} 
-            onSave={handleSaveCategory}
-            onClose={() => setIsDialogOpen(false)}
-          />
         </Dialog>
       </div>
 
@@ -226,65 +220,14 @@ const Categorias = () => {
           </CardContent>
         </Card>
       )}
+
+      <CategoryDialog 
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        category={editingCategory}
+        onSave={handleSaveCategory}
+      />
     </div>
-  );
-};
-
-// Componente do Dialog para adicionar/editar categorias
-const CategoryDialog = ({ category, onSave, onClose }: {
-  category: Category | null;
-  onSave: (data: any) => void;
-  onClose: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    name: category?.name || '',
-    description: category?.description || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <DialogContent className="max-w-lg">
-      <DialogHeader>
-        <DialogTitle>
-          {category ? 'Editar Categoria' : 'Nova Categoria'}
-        </DialogTitle>
-      </DialogHeader>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="name">Nome da Categoria *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            placeholder="Descrição da categoria..."
-          />
-        </div>
-
-        <div className="flex space-x-2 pt-4">
-          <Button type="submit" className="flex-1 bg-primary hover:bg-blue-dark">
-            {category ? 'Salvar Alterações' : 'Cadastrar Categoria'}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
-    </DialogContent>
   );
 };
 

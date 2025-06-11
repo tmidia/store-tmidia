@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Plus, 
   Search, 
@@ -18,13 +16,18 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import SupplierDialog from '@/components/SupplierDialog';
 
 interface Supplier {
   id: string;
   name: string;
+  company_name?: string;
   email?: string;
   phone?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   cnpj?: string;
   contact_person?: string;
 }
@@ -129,6 +132,7 @@ const Fornecedores = () => {
 
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.cnpj?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -156,11 +160,6 @@ const Fornecedores = () => {
               Novo Fornecedor
             </Button>
           </DialogTrigger>
-          <SupplierDialog 
-            supplier={editingSupplier} 
-            onSave={handleSaveSupplier}
-            onClose={() => setIsDialogOpen(false)}
-          />
         </Dialog>
       </div>
 
@@ -170,7 +169,7 @@ const Fornecedores = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Buscar por nome, CNPJ ou email..."
+              placeholder="Buscar por nome, razão social, CNPJ ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -190,6 +189,9 @@ const Fornecedores = () => {
                     <Building2 className="w-5 h-5 mr-2" />
                     {supplier.name}
                   </CardTitle>
+                  {supplier.company_name && (
+                    <p className="text-sm text-gray-600 mt-1">{supplier.company_name}</p>
+                  )}
                   {supplier.cnpj && (
                     <p className="text-sm text-gray-600 mt-1">CNPJ: {supplier.cnpj}</p>
                   )}
@@ -227,12 +229,16 @@ const Fornecedores = () => {
                 </div>
               )}
 
-              {supplier.address && (
+              {(supplier.address || supplier.city) && (
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-600">Endereço</p>
-                    <p className="text-sm text-gray-900">{supplier.address}</p>
+                    <p className="text-sm text-gray-900">
+                      {supplier.address && `${supplier.address}, `}
+                      {supplier.city && `${supplier.city}`}
+                      {supplier.state && ` - ${supplier.state}`}
+                    </p>
                   </div>
                 </div>
               )}
@@ -273,110 +279,14 @@ const Fornecedores = () => {
           </CardContent>
         </Card>
       )}
+
+      <SupplierDialog 
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        supplier={editingSupplier}
+        onSave={handleSaveSupplier}
+      />
     </div>
-  );
-};
-
-// Componente do Dialog para adicionar/editar fornecedores
-const SupplierDialog = ({ supplier, onSave, onClose }: {
-  supplier: Supplier | null;
-  onSave: (data: any) => void;
-  onClose: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    name: supplier?.name || '',
-    email: supplier?.email || '',
-    phone: supplier?.phone || '',
-    address: supplier?.address || '',
-    cnpj: supplier?.cnpj || '',
-    contact_person: supplier?.contact_person || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>
-          {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
-        </DialogTitle>
-      </DialogHeader>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">Nome da Empresa *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="cnpj">CNPJ</Label>
-            <Input
-              id="cnpj"
-              value={formData.cnpj}
-              onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
-              placeholder="00.000.000/0000-00"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="contact_person">Pessoa de Contato</Label>
-            <Input
-              id="contact_person"
-              value={formData.contact_person}
-              onChange={(e) => setFormData({...formData, contact_person: e.target.value})}
-            />
-          </div>
-          <div>
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              placeholder="(00) 00000-0000"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="address">Endereço</Label>
-          <Textarea
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData({...formData, address: e.target.value})}
-            placeholder="Endereço completo..."
-          />
-        </div>
-
-        <div className="flex space-x-2 pt-4">
-          <Button type="submit" className="flex-1 bg-primary hover:bg-blue-dark">
-            {supplier ? 'Salvar Alterações' : 'Cadastrar Fornecedor'}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
-    </DialogContent>
   );
 };
 
