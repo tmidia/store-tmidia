@@ -1,4 +1,5 @@
 
+
 -- Primeiro criar uma função que verifica se o usuário atual é superadmin
 CREATE OR REPLACE FUNCTION public.is_superadmin()
 RETURNS BOOLEAN AS $$
@@ -26,9 +27,9 @@ DROP POLICY IF EXISTS "Superadmin can update all profiles" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
--- Política para inserção de perfis (permitir apenas o próprio perfil)
+-- Política para inserção de perfis (permitir o próprio perfil OU superadmin)
 CREATE POLICY "Allow profile creation during signup" ON public.profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+  FOR INSERT WITH CHECK (auth.uid() = id OR public.is_superadmin());
 
 -- Política para atualização - permite atualizar próprio perfil ou ser superadmin
 CREATE POLICY "Users can update profiles" ON public.profiles
@@ -37,3 +38,4 @@ CREATE POLICY "Users can update profiles" ON public.profiles
 -- Política para superadmin ver todos os perfis
 CREATE POLICY "Superadmin can view all profiles" ON public.profiles
   FOR SELECT USING (auth.uid() = id OR public.is_superadmin());
+
