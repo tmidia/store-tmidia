@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -32,11 +31,11 @@ const Dashboard = () => {
         .from('products')
         .select('*', { count: 'exact', head: true });
 
-      // Buscar produtos com estoque baixo
+      // Buscar produtos com estoque baixo (stock_quantity <= minimum_stock)
       const { data: lowStockData } = await supabase
         .from('products')
         .select('stock_quantity, minimum_stock')
-        .lte('stock_quantity', supabase.rpc('minimum_stock'));
+        .filter('stock_quantity', 'lte', 'minimum_stock');
 
       // Buscar total de categorias
       const { count: categoriesCount } = await supabase
