@@ -32,41 +32,37 @@ export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
 export const createUser = async (formData: UserFormData): Promise<void> => {
   const capitalizedName = capitalizeWords(formData.full_name);
 
-  console.log('Tentando criar usuário:', { email: formData.email, username: formData.username });
+  console.log('Iniciando criação de usuário:', { email: formData.email, username: formData.username });
 
-  // Primeiro, criar o usuário no Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Usar admin API para criar o usuário diretamente
+  const { data: adminUser, error: adminError } = await supabase.auth.admin.createUser({
     email: formData.email,
     password: formData.password,
-    options: {
-      data: {
-        username: formData.username,
-        full_name: capitalizedName,
-        user_type: formData.user_type
-      }
+    email_confirm: true,
+    user_metadata: {
+      username: formData.username,
+      full_name: capitalizedName,
+      user_type: formData.user_type
     }
   });
 
-  if (authError) {
-    console.error('Erro de autenticação:', authError);
-    throw authError;
+  if (adminError) {
+    console.error('Erro ao criar usuário via admin:', adminError);
+    throw new Error(adminError.message);
   }
 
-  if (!authData.user) {
+  if (!adminUser.user) {
     throw new Error('Falha ao criar usuário');
   }
 
-  console.log('Usuário criado no Auth:', authData.user.id);
+  console.log('Usuário criado via admin API:', adminUser.user.id);
 
   try {
-    // Aguardar um pouco para garantir que o usuário foi criado no Auth
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Criar o perfil na tabela profiles
+    // Criar o perfil diretamente
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
-        id: authData.user.id,
+        id: adminUser.user.id,
         username: formData.username,
         full_name: capitalizedName,
         user_type: formData.user_type,
@@ -75,21 +71,21 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError);
-      // Se falhar ao criar o perfil, tentar deletar o usuário do Auth
+      // Se falhar ao criar o perfil, tentar deletar o usuário
       try {
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        await supabase.auth.admin.deleteUser(adminUser.user.id);
       } catch (cleanupError) {
-        console.error('Erro ao limpar usuário do Auth:', cleanupError);
+        console.error('Erro ao limpar usuário:', cleanupError);
       }
-      throw profileError;
+      throw new Error(profileError.message);
     }
 
     console.log('Perfil criado com sucesso');
 
     // Criar permissões se especificadas
-    if (formData.permissions.length > 0) {
+    if (formData.permissions && formData.permissions.length > 0) {
       const permissions = formData.permissions.map(module => ({
-        user_id: authData.user.id,
+        user_id: adminUser.user.id,
         module: module as any
       }));
 
@@ -99,7 +95,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
       if (permissionsError) {
         console.error('Erro ao criar permissões:', permissionsError);
-        // Não fazer rollback completo por conta das permissões, apenas logar o erro
+        // Não fazer rollback completo por conta das permissões
       } else {
         console.log('Permissões criadas com sucesso');
       }
