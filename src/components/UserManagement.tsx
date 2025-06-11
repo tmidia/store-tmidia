@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Edit, Trash2, Power, PowerOff } from 'lucide-react';
+import { Users, UserPlus, Edit, Trash2, Power, PowerOff, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -30,6 +29,8 @@ const UserManagement = () => {
   const [users, setUsers] = useState<UserWithPermissions[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithPermissions | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSignupAttempt, setLastSignupAttempt] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
@@ -42,6 +43,19 @@ const UserManagement = () => {
 
   const capitalizeWords = (str: string) => {
     return str.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const isWithinRateLimit = () => {
+    if (!lastSignupAttempt) return true;
+    const timeSinceLastAttempt = Date.now() - lastSignupAttempt;
+    return timeSinceLastAttempt >= 45000; // 45 seconds
+  };
+
+  const getRemainingTime = () => {
+    if (!lastSignupAttempt) return 0;
+    const timeSinceLastAttempt = Date.now() - lastSignupAttempt;
+    const remaining = Math.max(0, 45000 - timeSinceLastAttempt);
+    return Math.ceil(remaining / 1000);
   };
 
   useEffect(() => {
@@ -78,6 +92,18 @@ const UserManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!editingUser && !isWithinRateLimit()) {
+      const remainingSeconds = getRemainingTime();
+      toast({
+        title: "Limite de segurança ativo",
+        description: `Por segurança, aguarde ${remainingSeconds} segundos antes de tentar criar outro usuário.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
     try {
       const capitalizedName = capitalizeWords(formData.full_name);
@@ -118,6 +144,9 @@ const UserManagement = () => {
           description: "As informações do usuário foram atualizadas com sucesso.",
         });
       } else {
+        // Registrar tentativa de criação
+        setLastSignupAttempt(Date.now());
+
         // Criar novo usuário
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
@@ -130,7 +159,18 @@ const UserManagement = () => {
           }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          if (authError.message.includes('45 seconds') || authError.message.includes('rate limit')) {
+            toast({
+              title: "Limite de segurança ativo",
+              description: "Por segurança, aguarde 45 segundos antes de tentar criar outro usuário.",
+              variant: "destructive",
+            });
+          } else {
+            throw authError;
+          }
+          return;
+        }
 
         if (authData.user) {
           // Criar perfil
@@ -168,11 +208,26 @@ const UserManagement = () => {
       resetForm();
       fetchUsers();
     } catch (error: any) {
+      console.error('Erro ao salvar usuário:', error);
+      
+      let errorMessage = "Erro ao salvar usuário.";
+      if (error.message.includes('45 seconds') || error.message.includes('rate limit')) {
+        errorMessage = "Por segurança, aguarde 45 segundos antes de tentar criar outro usuário.";
+      } else if (error.message.includes('User already registered')) {
+        errorMessage = "Este email já está cadastrado no sistema.";
+      } else if (error.message.includes('invalid email')) {
+        errorMessage = "Por favor, insira um email válido.";
+      } else if (error.message.includes('password')) {
+        errorMessage = "A senha deve ter pelo menos 6 caracteres.";
+      }
+
       toast({
         title: "Erro",
-        description: error.message || "Erro ao salvar usuário.",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -234,6 +289,9 @@ const UserManagement = () => {
     }));
   };
 
+  const canCreateUser = isWithinRateLimit();
+  const remainingTime = getRemainingTime();
+
   return (
     <Card>
       <CardHeader>
@@ -244,9 +302,22 @@ const UserManagement = () => {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Novo Usuário
+              <Button 
+                onClick={resetForm}
+                disabled={!canCreateUser}
+                className="relative"
+              >
+                {!canCreateUser ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2" />
+                    Aguarde {remainingTime}s
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Novo Usuário
+                  </>
+                )}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -256,6 +327,12 @@ const UserManagement = () => {
                 </DialogTitle>
                 <DialogDescription>
                   {editingUser ? 'Atualize as informações do usuário.' : 'Preencha os dados para criar um novo usuário.'}
+                  {!editingUser && !canCreateUser && (
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm">
+                      <Clock className="w-4 h-4 inline mr-1" />
+                      Aguarde {remainingTime} segundos para criar outro usuário
+                    </div>
+                  )}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -342,8 +419,15 @@ const UserManagement = () => {
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    {editingUser ? 'Atualizar' : 'Criar'} Usuário
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || (!editingUser && !canCreateUser)}
+                  >
+                    {isSubmitting ? (
+                      'Processando...'
+                    ) : (
+                      editingUser ? 'Atualizar' : 'Criar'
+                    )} Usuário
                   </Button>
                 </DialogFooter>
               </form>
