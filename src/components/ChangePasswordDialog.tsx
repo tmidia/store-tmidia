@@ -3,11 +3,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Key } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useChangePassword } from '@/hooks/useChangePassword';
 
-const ChangePasswordForm = () => {
+const ChangePasswordDialog = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,27 +42,43 @@ const ChangePasswordForm = () => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setIsOpen(false);
     }
   };
 
+  const resetForm = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+  };
+
   return (
-    <Card className="max-w-md">
-      <CardHeader>
-        <div className="flex items-center space-x-2">
-          <Key className="w-5 h-5 text-primary" />
-          <CardTitle>Alterar Senha</CardTitle>
-        </div>
-        <CardDescription>
-          Digite sua senha atual e a nova senha
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) resetForm();
+    }}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <Lock className="w-4 h-4 mr-2" />
+          Alterar Senha
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alterar Senha</DialogTitle>
+          <DialogDescription>
+            Digite sua senha atual e escolha uma nova senha para sua conta.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="currentPassword">Senha Atual</Label>
+            <Label htmlFor="current-password">Senha Atual</Label>
             <div className="relative">
               <Input
-                id="currentPassword"
+                id="current-password"
                 type={showCurrentPassword ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -76,10 +100,10 @@ const ChangePasswordForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="newPassword">Nova Senha</Label>
+            <Label htmlFor="new-password">Nova Senha</Label>
             <div className="relative">
               <Input
-                id="newPassword"
+                id="new-password"
                 type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -103,10 +127,10 @@ const ChangePasswordForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+            <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
             <div className="relative">
               <Input
-                id="confirmPassword"
+                id="confirm-password"
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -131,31 +155,39 @@ const ChangePasswordForm = () => {
             )}
           </div>
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading ||
-              !currentPassword ||
-              !newPassword ||
-              !confirmPassword ||
-              newPassword !== confirmPassword ||
-              newPassword.length < 6
-            }
-            className="w-full"
-          >
-            {isLoading ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Alterando...</span>
-              </div>
-            ) : (
-              "Alterar Senha"
-            )}
-          </Button>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                isLoading ||
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                newPassword !== confirmPassword ||
+                newPassword.length < 6
+              }
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Alterando...</span>
+                </div>
+              ) : (
+                "Alterar Senha"
+              )}
+            </Button>
+          </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default ChangePasswordForm;
+export default ChangePasswordDialog;

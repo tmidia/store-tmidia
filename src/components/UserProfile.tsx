@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 interface Profile {
   username: string;
@@ -66,7 +67,7 @@ const UserProfile = () => {
           Informações da sua conta
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={profile?.avatar_url || ''} />
@@ -82,6 +83,10 @@ const UserProfile = () => {
               @{profile?.username}
             </p>
           </div>
+        </div>
+        
+        <div className="pt-4">
+          <ChangePasswordDialog />
         </div>
       </CardContent>
     </Card>
