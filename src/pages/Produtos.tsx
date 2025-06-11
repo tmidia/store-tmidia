@@ -111,7 +111,7 @@ const Produtos = () => {
       <ProductDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        product={editingProduct}
+        product={editingProduct as any}
         onSave={handleSaveProduct}
       />
     </div>

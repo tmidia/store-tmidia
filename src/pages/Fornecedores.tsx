@@ -113,7 +113,7 @@ const Fornecedores = () => {
       <SupplierDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        supplier={editingSupplier}
+        supplier={editingSupplier as any}
         onSave={handleSaveFornecedor}
       />
     </div>
