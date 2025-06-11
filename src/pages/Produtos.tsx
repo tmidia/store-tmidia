@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -112,8 +111,6 @@ const Produtos = () => {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         product={editingProduct}
-        categories={categories}
-        suppliers={suppliers}
         onSave={handleSaveProduct}
       />
     </div>

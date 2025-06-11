@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { capitalizeWords } from '@/utils/textUtils';
+import { Percent } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -31,12 +32,14 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
     supplier_id: '',
     cost_price: '',
     sale_price: '',
+    profit_margin: '',
     stock_quantity: '',
     minimum_stock: ''
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [useMargin, setUseMargin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,13 +57,31 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
         supplier_id: product.supplier_id || '',
         cost_price: product.cost_price?.toString() || '',
         sale_price: product.sale_price?.toString() || '',
+        profit_margin: '',
         stock_quantity: product.stock_quantity?.toString() || '',
         minimum_stock: product.minimum_stock?.toString() || ''
       });
+      setUseMargin(false);
     } else {
       resetForm();
     }
   }, [product]);
+
+  // Calcular preço de venda automaticamente quando margem ou preço de custo mudam
+  useEffect(() => {
+    if (useMargin && formData.cost_price && formData.profit_margin) {
+      const costPrice = parseFloat(formData.cost_price);
+      const margin = parseFloat(formData.profit_margin);
+      
+      if (!isNaN(costPrice) && !isNaN(margin) && costPrice > 0) {
+        const salePrice = costPrice * (1 + margin / 100);
+        setFormData(prev => ({ 
+          ...prev, 
+          sale_price: salePrice.toFixed(2) 
+        }));
+      }
+    }
+  }, [formData.cost_price, formData.profit_margin, useMargin]);
 
   const fetchCategories = async () => {
     try {
@@ -97,9 +118,11 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
       supplier_id: '',
       cost_price: '',
       sale_price: '',
+      profit_margin: '',
       stock_quantity: '',
       minimum_stock: ''
     });
+    setUseMargin(false);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -110,6 +133,21 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
     }
 
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
+  };
+
+  const calculateMarginFromPrices = () => {
+    if (formData.cost_price && formData.sale_price) {
+      const costPrice = parseFloat(formData.cost_price);
+      const salePrice = parseFloat(formData.sale_price);
+      
+      if (!isNaN(costPrice) && !isNaN(salePrice) && costPrice > 0) {
+        const margin = ((salePrice - costPrice) / costPrice) * 100;
+        setFormData(prev => ({ 
+          ...prev, 
+          profit_margin: margin.toFixed(2) 
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,7 +207,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Editar Produto' : 'Novo Produto'}
@@ -243,17 +281,50 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="cost_price">Preço de Custo</Label>
-              <Input
-                id="cost_price"
-                type="number"
-                step="0.01"
-                value={formData.cost_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+          <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="use-margin"
+                checked={useMargin}
+                onChange={(e) => setUseMargin(e.target.checked)}
+                className="rounded border-gray-300"
               />
+              <Label htmlFor="use-margin" className="text-sm font-medium">
+                Calcular preço de venda por margem
+              </Label>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cost_price">Preço de Custo</Label>
+                <Input
+                  id="cost_price"
+                  type="number"
+                  step="0.01"
+                  value={formData.cost_price}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                  required
+                />
+              </div>
+              {useMargin && (
+                <div>
+                  <Label htmlFor="profit_margin">Margem de Lucro (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="profit_margin"
+                      type="number"
+                      step="0.01"
+                      value={formData.profit_margin}
+                      onChange={(e) => setFormData(prev => ({ ...prev, profit_margin: e.target.value }))}
+                      placeholder="Ex: 50 para 50%"
+                    />
+                    <Percent className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="sale_price">Preço de Venda</Label>
               <Input
@@ -262,7 +333,16 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
                 step="0.01"
                 value={formData.sale_price}
                 onChange={(e) => setFormData(prev => ({ ...prev, sale_price: e.target.value }))}
+                onBlur={calculateMarginFromPrices}
+                readOnly={useMargin}
+                className={useMargin ? 'bg-gray-100' : ''}
+                required
               />
+              {useMargin && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Calculado automaticamente baseado na margem
+                </p>
+              )}
             </div>
           </div>
 
