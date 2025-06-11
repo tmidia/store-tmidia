@@ -19,6 +19,7 @@ import ChangePasswordForm from "./components/ChangePasswordForm";
 import Estoque from "./pages/Estoque";
 import Fornecedores from "./pages/Fornecedores";
 import Categorias from "./pages/Categorias";
+import Financeiro from "./pages/Financeiro";
 import UserManagement from "./components/UserManagement";
 import CompanySettings from "./components/CompanySettings";
 import SystemParameters from "./components/SystemParameters";
@@ -142,10 +143,7 @@ const App = () => (
           <Route path="/financeiro" element={
             <ProtectedRoute>
               <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                </div>
+                <Financeiro />
               </MainLayout>
             </ProtectedRoute>
           } />
