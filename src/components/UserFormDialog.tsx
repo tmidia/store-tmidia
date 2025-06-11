@@ -85,7 +85,7 @@ export const UserFormDialog = ({
         <Button 
           onClick={resetForm}
           disabled={!canCreateUser}
-          className="relative"
+          className="relative w-full sm:w-auto"
         >
           {!canCreateUser ? (
             <>
@@ -100,12 +100,12 @@ export const UserFormDialog = ({
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
             {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {editingUser ? 'Atualize as informações do usuário.' : 'Preencha os dados para criar um novo usuário.'}
             {!editingUser && !canCreateUser && (
               <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm">
@@ -116,56 +116,60 @@ export const UserFormDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="username">Nome de Usuário</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium">Nome de Usuário</Label>
               <Input
                 id="username"
                 value={formData.username}
                 onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                 required
+                className="w-full"
               />
             </div>
-            <div>
-              <Label htmlFor="full_name">Nome Completo</Label>
+            <div className="space-y-2">
+              <Label htmlFor="full_name" className="text-sm font-medium">Nome Completo</Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                 required
+                className="w-full"
               />
             </div>
           </div>
 
           {!editingUser && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="email">E-mail</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   required
+                  className="w-full"
                 />
               </div>
-              <div>
-                <Label htmlFor="password">Senha</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   required
+                  className="w-full"
                 />
               </div>
             </div>
           )}
 
-          <div>
-            <Label htmlFor="user_type">Tipo de Usuário</Label>
+          <div className="space-y-2">
+            <Label htmlFor="user_type" className="text-sm font-medium">Tipo de Usuário</Label>
             <Select value={formData.user_type} onValueChange={(value: Database['public']['Enums']['user_type']) => setFormData(prev => ({ ...prev, user_type: value }))}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -177,17 +181,17 @@ export const UserFormDialog = ({
             </Select>
           </div>
 
-          <div>
-            <Label>Permissões de Módulos</Label>
-            <div className="grid grid-cols-3 gap-2 mt-2">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Permissões de Módulos</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {MODULES.map(module => (
-                <div key={module} className="flex items-center space-x-2">
+                <div key={module} className="flex items-center space-x-2 p-2 border rounded">
                   <Checkbox
                     id={module}
                     checked={formData.permissions.includes(module)}
                     onCheckedChange={(checked) => handlePermissionChange(module, checked as boolean)}
                   />
-                  <Label htmlFor={module} className="capitalize text-sm">
+                  <Label htmlFor={module} className="capitalize text-sm cursor-pointer flex-1">
                     {module}
                   </Label>
                 </div>
@@ -195,13 +199,14 @@ export const UserFormDialog = ({
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
             <Button 
               type="submit" 
               disabled={isSubmitting || (!editingUser && !canCreateUser)}
+              className="w-full sm:w-auto"
             >
               {isSubmitting ? (
                 'Processando...'
