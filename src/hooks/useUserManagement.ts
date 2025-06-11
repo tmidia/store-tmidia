@@ -82,13 +82,16 @@ export const useUserManagement = () => {
 
     const capitalizedName = capitalizeWords(formData.full_name);
 
+    console.log('Tentando criar usuário:', { email: formData.email, username: formData.username });
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
         data: {
           username: formData.username,
-          full_name: capitalizedName
+          full_name: capitalizedName,
+          user_type: formData.user_type
         }
       }
     });
@@ -98,7 +101,12 @@ export const useUserManagement = () => {
       throw authError;
     }
 
+    console.log('Usuário criado no Auth:', authData.user?.id);
+
     if (authData.user) {
+      // Aguardar um pouco para garantir que o usuário foi criado no Auth
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -113,6 +121,8 @@ export const useUserManagement = () => {
         throw profileError;
       }
 
+      console.log('Perfil criado com sucesso');
+
       if (formData.permissions.length > 0) {
         const permissions = formData.permissions.map(module => ({
           user_id: authData.user.id,
@@ -125,6 +135,8 @@ export const useUserManagement = () => {
 
         if (permissionsError) {
           console.error('Erro ao criar permissões:', permissionsError);
+        } else {
+          console.log('Permissões criadas com sucesso');
         }
       }
     }
@@ -228,6 +240,8 @@ export const useUserManagement = () => {
         errorMessage = "A senha deve ter pelo menos 6 caracteres.";
       } else if (error.message.includes('Username should be') || error.message.includes('unique')) {
         errorMessage = "Este nome de usuário já existe. Escolha outro.";
+      } else if (error.message.includes('duplicate key')) {
+        errorMessage = "Este usuário já existe no sistema.";
       }
 
       toast({
