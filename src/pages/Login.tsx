@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -249,8 +248,8 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>© 2024 Sistema de Gestão para Lojas.</p>
-          <p>Desenvolvido para facilitar sua gestão diária.</p>
+          <p>© 2025 Sistema de Gestão para Lojas.</p>
+          <p>Desenvolvido por TMIDIA para facilitar sua gestão diária.</p>
         </div>
       </div>
     </div>
