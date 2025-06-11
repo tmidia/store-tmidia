@@ -8,7 +8,7 @@ import { Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AdminPasswordUpdate = () => {
-  const [email, setEmail] = useState('tmidia@sga.com');
+  const [email, setEmail] = useState('tmidiamkt@gmail.com');
   const [newPassword, setNewPassword] = useState('Tmidia_202S');
   const [isLoading, setIsLoading] = useState(false);
 
