@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from '@supabase/supabase-js';
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
@@ -16,8 +19,36 @@ const queryClient = new QueryClient();
 
 // Componente para verificar autenticação
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return user ? children : <Navigate to="/login" replace />;
 };
 
 // Layout principal com sidebar
@@ -127,8 +158,13 @@ const App = () => (
             <ProtectedRoute>
               <MainLayout>
                 <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-6">Configurações</h1>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-6">
+                      <UserProfile />
+                      <ChangePasswordForm />
+                    </div>
+                  </div>
                 </div>
               </MainLayout>
             </ProtectedRoute>

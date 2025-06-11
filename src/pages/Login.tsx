@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,24 +20,35 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulação de login - em produção, isso seria uma chamada à API
-    setTimeout(() => {
-      if (email && password) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (data.user) {
         localStorage.setItem('isAuthenticated', 'true');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema de Gestão.",
         });
         navigate('/dashboard');
-      } else {
-        toast({
-          title: "Erro no login",
-          description: "Por favor, preencha todos os campos.",
-          variant: "destructive",
-        });
       }
+    } catch (error) {
+      toast({
+        title: "Erro no login",
+        description: "Erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -66,7 +78,7 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  E-mail ou Usuário
+                  E-mail
                 </Label>
                 <Input
                   id="email"
