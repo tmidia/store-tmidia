@@ -34,6 +34,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
   console.log('Tentando criar usuário:', { email: formData.email, username: formData.username });
 
+  // Primeiro, criar o usuário no Auth
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: formData.email,
     password: formData.password,
@@ -51,28 +52,41 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
     throw authError;
   }
 
-  console.log('Usuário criado no Auth:', authData.user?.id);
+  if (!authData.user) {
+    throw new Error('Falha ao criar usuário');
+  }
 
-  if (authData.user) {
+  console.log('Usuário criado no Auth:', authData.user.id);
+
+  try {
     // Aguardar um pouco para garantir que o usuário foi criado no Auth
     await new Promise(resolve => setTimeout(resolve, 1000));
 
+    // Criar o perfil na tabela profiles
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: authData.user.id,
         username: formData.username,
         full_name: capitalizedName,
-        user_type: formData.user_type
+        user_type: formData.user_type,
+        is_active: true
       });
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError);
+      // Se falhar ao criar o perfil, tentar deletar o usuário do Auth
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (cleanupError) {
+        console.error('Erro ao limpar usuário do Auth:', cleanupError);
+      }
       throw profileError;
     }
 
     console.log('Perfil criado com sucesso');
 
+    // Criar permissões se especificadas
     if (formData.permissions.length > 0) {
       const permissions = formData.permissions.map(module => ({
         user_id: authData.user.id,
@@ -85,10 +99,14 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
       if (permissionsError) {
         console.error('Erro ao criar permissões:', permissionsError);
+        // Não fazer rollback completo por conta das permissões, apenas logar o erro
       } else {
         console.log('Permissões criadas com sucesso');
       }
     }
+  } catch (error) {
+    console.error('Erro no processo de criação:', error);
+    throw error;
   }
 };
 
@@ -106,20 +124,26 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
   if (updateError) throw updateError;
 
+  // Remover permissões existentes
   await supabase
     .from('user_permissions')
     .delete()
     .eq('user_id', user.id);
 
+  // Adicionar novas permissões
   if (formData.permissions.length > 0) {
     const permissions = formData.permissions.map(module => ({
       user_id: user.id,
       module: module as any
     }));
 
-    await supabase
+    const { error: permissionsError } = await supabase
       .from('user_permissions')
       .insert(permissions);
+
+    if (permissionsError) {
+      console.error('Erro ao atualizar permissões:', permissionsError);
+    }
   }
 };
 

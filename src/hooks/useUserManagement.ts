@@ -7,6 +7,7 @@ import { getUserErrorMessage } from '@/utils/userErrorMessages';
 
 export const useUserManagement = () => {
   const [users, setUsers] = useState<UserWithPermissions[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -15,10 +16,18 @@ export const useUserManagement = () => {
 
   const loadUsers = async () => {
     try {
+      setIsLoading(true);
       const fetchedUsers = await fetchUsers();
       setUsers(fetchedUsers);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar usuários.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,7 +47,7 @@ export const useUserManagement = () => {
         });
       }
 
-      loadUsers();
+      await loadUsers();
     } catch (error: any) {
       console.error('Erro ao salvar usuário:', error);
       
@@ -49,6 +58,8 @@ export const useUserManagement = () => {
         description: errorMessage,
         variant: "destructive",
       });
+      
+      throw error; // Re-throw para que o componente possa lidar com o erro
     }
   };
 
@@ -61,8 +72,9 @@ export const useUserManagement = () => {
         description: `O usuário foi ${user.is_active ? 'desativado' : 'ativado'} com sucesso.`,
       });
 
-      loadUsers();
+      await loadUsers();
     } catch (error: any) {
+      console.error('Erro ao alterar status:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao alterar status do usuário.",
@@ -73,6 +85,7 @@ export const useUserManagement = () => {
 
   return {
     users,
+    isLoading,
     handleSubmit,
     toggleUserStatus,
     fetchUsers: loadUsers

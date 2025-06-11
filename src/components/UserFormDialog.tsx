@@ -47,6 +47,13 @@ export const UserFormDialog = ({
     onEditingUserChange(null);
   };
 
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      resetForm();
+    }
+  };
+
   const handleEdit = (user: UserWithPermissions) => {
     onEditingUserChange(user);
     setFormData({
@@ -62,13 +69,18 @@ export const UserFormDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(editingUser, formData);
-    setIsDialogOpen(false);
-    resetForm();
+    try {
+      await onSubmit(editingUser, formData);
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      // O erro já foi tratado no hook, não fazer nada aqui
+      console.error('Erro no formulário:', error);
+    }
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
       <UserDialogTrigger
         canCreateUser={canCreateUser}
         remainingTime={remainingTime}
@@ -100,7 +112,13 @@ export const UserFormDialog = ({
         />
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setIsDialogOpen(false)} 
+            className="w-full sm:w-auto"
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button 
