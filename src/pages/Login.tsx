@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +12,45 @@ import { supabase } from '@/integrations/supabase/client';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isNewPasswordMode, setIsNewPasswordMode] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verificar se há tokens de recuperação na URL
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+
+    if (accessToken && refreshToken && type === 'recovery') {
+      // Configurar a sessão com os tokens de recuperação
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Erro ao definir sessão:', error);
+          toast({
+            title: "Erro na recuperação",
+            description: "Link de recuperação inválido ou expirado.",
+            variant: "destructive",
+          });
+        } else {
+          setIsNewPasswordMode(true);
+          // Limpar a URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +130,72 @@ const Login = () => {
     }
   };
 
+  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "As senhas digitadas não são iguais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        toast({
+          title: "Erro ao atualizar senha",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Senha atualizada!",
+          description: "Sua senha foi alterada com sucesso.",
+        });
+        setIsNewPasswordMode(false);
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCardTitle = () => {
+    if (isNewPasswordMode) return "Nova Senha";
+    if (isResetMode) return "Recuperar Senha";
+    return "Entrar no Sistema";
+  };
+
+  const getCardDescription = () => {
+    if (isNewPasswordMode) return "Digite sua nova senha";
+    if (isResetMode) return "Digite seu email para receber as instruções de recuperação";
+    return "Digite suas credenciais para acessar o painel";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -111,18 +212,88 @@ const Login = () => {
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-semibold text-gray-900">
-              {isResetMode ? "Recuperar Senha" : "Entrar no Sistema"}
+              {getCardTitle()}
             </CardTitle>
             <CardDescription className="text-gray-600">
-              {isResetMode 
-                ? "Digite seu email para receber as instruções de recuperação"
-                : "Digite suas credenciais para acessar o painel"
-              }
+              {getCardDescription()}
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            {isResetMode ? (
+            {isNewPasswordMode ? (
+              <form onSubmit={handleNewPasswordSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-sm font-medium text-gray-700">
+                    Nova Senha
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="h-12 border-gray-200 focus:border-primary focus:ring-primary pr-12"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
+                    Confirmar Nova Senha
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="h-12 border-gray-200 focus:border-primary focus:ring-primary pr-12"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-primary hover:bg-blue-dark text-white font-medium rounded-lg transition-colors shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Atualizando...</span>
+                    </div>
+                  ) : (
+                    "Atualizar Senha"
+                  )}
+                </Button>
+              </form>
+            ) : isResetMode ? (
               <form onSubmit={handlePasswordReset} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email" className="text-sm font-medium text-gray-700">
