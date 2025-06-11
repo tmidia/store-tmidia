@@ -83,21 +83,21 @@ export const FinancialOverview = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-6">
-        <Calendar className="w-5 h-5" />
-        <h3 className="text-lg font-semibold">
+      <div className="flex items-center gap-2 mb-4 sm:mb-6">
+        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+        <h3 className="text-base sm:text-lg font-semibold">
           Resumo de {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
         </h3>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receitas do Mês</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Receitas do Mês</CardTitle>
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">
               {formatCurrency(monthlyData?.totalRevenue || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -108,11 +108,11 @@ export const FinancialOverview = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas do Mês</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Despesas do Mês</CardTitle>
+            <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-lg sm:text-2xl font-bold text-red-600">
               {formatCurrency(monthlyData?.totalExpenses || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -123,11 +123,11 @@ export const FinancialOverview = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resultado Líquido</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Resultado Líquido</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${
+            <div className={`text-lg sm:text-2xl font-bold ${
               (monthlyData?.netResult || 0) >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
               {formatCurrency(monthlyData?.netResult || 0)}
@@ -140,18 +140,18 @@ export const FinancialOverview = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contas Pendentes</CardTitle>
-            <Wallet className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Contas Pendentes</CardTitle>
+            <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              <div className="text-sm">
+              <div className="text-xs sm:text-sm">
                 <span className="text-green-600 font-medium">A receber: </span>
-                {formatCurrency(monthlyData?.pendingReceivable || 0)}
+                <span className="text-xs sm:text-sm">{formatCurrency(monthlyData?.pendingReceivable || 0)}</span>
               </div>
-              <div className="text-sm">
+              <div className="text-xs sm:text-sm">
                 <span className="text-red-600 font-medium">A pagar: </span>
-                {formatCurrency(monthlyData?.pendingPayable || 0)}
+                <span className="text-xs sm:text-sm">{formatCurrency(monthlyData?.pendingPayable || 0)}</span>
               </div>
             </div>
           </CardContent>
