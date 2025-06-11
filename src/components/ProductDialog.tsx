@@ -20,7 +20,7 @@ interface ProductDialogProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onSave: () => void;
+  onSave: (productData: any) => Promise<void>;
 }
 
 const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps) => {
@@ -167,33 +167,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
         minimum_stock: parseInt(formData.minimum_stock) || 0
       };
 
-      if (product) {
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', product.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto atualizado",
-          description: "As informações do produto foram atualizadas com sucesso.",
-        });
-      } else {
-        const { error } = await supabase
-          .from('products')
-          .insert(productData);
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto criado",
-          description: "O produto foi criado com sucesso.",
-        });
-      }
-
-      onSave();
-      onClose();
+      await onSave(productData);
     } catch (error: any) {
       toast({
         title: "Erro",
