@@ -8,15 +8,15 @@ interface Product {
   id: string;
   name: string;
   code: string;
-  description?: string;
-  category_id?: string;
-  supplier_id?: string;
+  description?: string | null;
+  category_id?: string | null;
+  supplier_id?: string | null;
   cost_price: number;
   sale_price: number;
   stock_quantity: number;
   minimum_stock: number;
-  categories?: { name: string };
-  suppliers?: { name: string };
+  categories?: { name: string } | null;
+  suppliers?: { name: string } | null;
 }
 
 interface ProductCardProps {
