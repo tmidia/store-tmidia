@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,9 +17,11 @@ import {
   Banknote,
   QrCode,
   DollarSign,
-  User
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useProducts } from '@/hooks/useProducts';
 
 const PDV = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,15 +30,10 @@ const PDV = () => {
   const [formaPagamento, setFormaPagamento] = useState('');
   const [valorRecebido, setValorRecebido] = useState('');
   const [clienteNome, setClienteNome] = useState('');
+  const [caixaAberto, setCaixaAberto] = useState(false);
 
-  // Produtos simulados
-  const produtos = [
-    { id: 1, nome: 'Capa iPhone 14 Pro', codigo: '001', preco: 29.90, estoque: 25 },
-    { id: 2, nome: 'Chinelo Havaianas', codigo: '002', preco: 35.00, estoque: 8 },
-    { id: 3, nome: 'Copo Térmico', codigo: '003', preco: 45.00, estoque: 12 },
-    { id: 4, nome: 'Carregador iPhone', codigo: '004', preco: 55.00, estoque: 15 },
-    { id: 5, nome: 'Fone Bluetooth', codigo: '005', preco: 89.90, estoque: 6 },
-  ];
+  // Usar produtos reais do banco de dados
+  const { produtos, loading } = useProducts();
 
   const formasPagamento = [
     { value: 'dinheiro', label: 'Dinheiro', icon: Banknote },
@@ -45,11 +42,26 @@ const PDV = () => {
     { value: 'misto', label: 'Misto', icon: Calculator },
   ];
 
+  // Verificar se o caixa está aberto ao carregar a página
+  useEffect(() => {
+    const caixaStatus = localStorage.getItem('caixaAberto');
+    setCaixaAberto(caixaStatus === 'true');
+  }, []);
+
   const adicionarAoCarrinho = (produto) => {
+    if (!caixaAberto) {
+      toast({
+        title: "Caixa fechado",
+        description: "Abra o caixa para realizar vendas.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const itemExistente = carrinho.find(item => item.id === produto.id);
     
     if (itemExistente) {
-      if (itemExistente.quantidade < produto.estoque) {
+      if (itemExistente.quantidade < produto.stock_quantity) {
         setCarrinho(carrinho.map(item => 
           item.id === produto.id 
             ? { ...item, quantidade: item.quantidade + 1 }
@@ -63,7 +75,14 @@ const PDV = () => {
         });
       }
     } else {
-      setCarrinho([...carrinho, { ...produto, quantidade: 1 }]);
+      setCarrinho([...carrinho, { 
+        ...produto, 
+        quantidade: 1,
+        preco: produto.sale_price,
+        nome: produto.name,
+        codigo: produto.code,
+        estoque: produto.stock_quantity
+      }]);
     }
   };
 
@@ -78,7 +97,7 @@ const PDV = () => {
     }
     
     const produto = produtos.find(p => p.id === id);
-    if (novaQuantidade > produto.estoque) {
+    if (novaQuantidade > produto.stock_quantity) {
       toast({
         title: "Estoque insuficiente",
         description: "Quantidade maior que o estoque disponível.",
@@ -98,6 +117,15 @@ const PDV = () => {
   const troco = parseFloat(valorRecebido) - total;
 
   const finalizarVenda = () => {
+    if (!caixaAberto) {
+      toast({
+        title: "Caixa fechado",
+        description: "Abra o caixa para realizar vendas.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (carrinho.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -139,10 +167,49 @@ const PDV = () => {
     setClienteNome('');
   };
 
+  const abrirCaixa = () => {
+    const valorInicial = prompt("Digite o valor inicial do caixa:");
+    if (valorInicial && !isNaN(parseFloat(valorInicial))) {
+      localStorage.setItem('caixaAberto', 'true');
+      localStorage.setItem('valorInicialCaixa', valorInicial);
+      localStorage.setItem('dataAberturaCaixa', new Date().toISOString());
+      setCaixaAberto(true);
+      
+      toast({
+        title: "Caixa aberto!",
+        description: `Valor inicial: R$ ${parseFloat(valorInicial).toFixed(2)}`,
+      });
+    }
+  };
+
+  const fecharCaixa = () => {
+    const valorFinal = prompt("Digite o valor final do caixa:");
+    if (valorFinal && !isNaN(parseFloat(valorFinal))) {
+      localStorage.setItem('caixaAberto', 'false');
+      localStorage.setItem('valorFinalCaixa', valorFinal);
+      localStorage.setItem('dataFechamentoCaixa', new Date().toISOString());
+      setCaixaAberto(false);
+      
+      toast({
+        title: "Caixa fechado!",
+        description: `Valor final: R$ ${parseFloat(valorFinal).toFixed(2)}`,
+      });
+    }
+  };
+
+  // Filtrar produtos com base na busca (nome ou código)
   const produtosFiltrados = produtos.filter(produto =>
-    produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+    produto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    produto.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -154,10 +221,32 @@ const PDV = () => {
               <h1 className="text-3xl font-bold text-gray-900">PDV</h1>
               <p className="text-gray-600 mt-1">Ponto de Venda</p>
             </div>
-            <Badge className="bg-green-100 text-green-800 px-3 py-1">
-              Caixa Aberto
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge className={caixaAberto ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                {caixaAberto ? "Caixa Aberto" : "Caixa Fechado"}
+              </Badge>
+              {caixaAberto ? (
+                <Button variant="outline" onClick={fecharCaixa} className="text-red-600 hover:text-red-700">
+                  Fechar Caixa
+                </Button>
+              ) : (
+                <Button onClick={abrirCaixa} className="bg-green-600 hover:bg-green-700">
+                  Abrir Caixa
+                </Button>
+              )}
+            </div>
           </div>
+
+          {!caixaAberto && (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-red-700">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="font-medium">Caixa fechado - Abra o caixa para realizar vendas</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Busca de Produtos */}
           <Card className="border-0 shadow-md bg-white">
@@ -165,7 +254,7 @@ const PDV = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  placeholder="Buscar produto por nome ou código de barras..."
+                  placeholder="Buscar produto por nome ou código..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-12 text-lg"
@@ -177,33 +266,45 @@ const PDV = () => {
           {/* Lista de Produtos */}
           <Card className="border-0 shadow-md bg-white">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Produtos Disponíveis</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Produtos Disponíveis ({produtosFiltrados.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                {produtosFiltrados.map(produto => (
-                  <div 
-                    key={produto.id}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-primary cursor-pointer transition-colors"
-                    onClick={() => adicionarAoCarrinho(produto)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium text-gray-900">{produto.nome}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {produto.codigo}
-                      </Badge>
+              {produtosFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {produtosFiltrados.map(produto => (
+                    <div 
+                      key={produto.id}
+                      className={`p-4 border border-gray-200 rounded-lg transition-colors ${
+                        caixaAberto 
+                          ? 'hover:border-primary cursor-pointer' 
+                          : 'opacity-50 cursor-not-allowed'
+                      }`}
+                      onClick={() => caixaAberto && adicionarAoCarrinho(produto)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900">{produto.name}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {produto.code}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-primary">
+                          R$ {produto.sale_price.toFixed(2)}
+                        </span>
+                        <span className={`text-sm ${produto.stock_quantity <= produto.minimum_stock ? 'text-red-600' : 'text-gray-600'}`}>
+                          Estoque: {produto.stock_quantity}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-primary">
-                        R$ {produto.preco.toFixed(2)}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        Estoque: {produto.estoque}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -223,6 +324,7 @@ const PDV = () => {
                 placeholder="Nome do cliente (opcional)"
                 value={clienteNome}
                 onChange={(e) => setClienteNome(e.target.value)}
+                disabled={!caixaAberto}
               />
             </CardContent>
           </Card>
@@ -252,6 +354,7 @@ const PDV = () => {
                           variant="outline"
                           onClick={() => alterarQuantidade(item.id, item.quantidade - 1)}
                           className="h-8 w-8 p-0"
+                          disabled={!caixaAberto}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
@@ -261,6 +364,7 @@ const PDV = () => {
                           variant="outline"
                           onClick={() => alterarQuantidade(item.id, item.quantidade + 1)}
                           className="h-8 w-8 p-0"
+                          disabled={!caixaAberto}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -269,6 +373,7 @@ const PDV = () => {
                           variant="outline"
                           onClick={() => removerDoCarrinho(item.id)}
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          disabled={!caixaAberto}
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -301,6 +406,7 @@ const PDV = () => {
                     className="w-20 h-8"
                     min="0"
                     max="100"
+                    disabled={!caixaAberto}
                   />
                 </div>
 
@@ -321,7 +427,7 @@ const PDV = () => {
 
               <div className="space-y-3">
                 <label className="text-sm font-medium">Forma de Pagamento:</label>
-                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                <Select value={formaPagamento} onValueChange={setFormaPagamento} disabled={!caixaAberto}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a forma de pagamento" />
                   </SelectTrigger>
@@ -346,6 +452,7 @@ const PDV = () => {
                       value={valorRecebido}
                       onChange={(e) => setValorRecebido(e.target.value)}
                       placeholder="0,00"
+                      disabled={!caixaAberto}
                     />
                     {valorRecebido && parseFloat(valorRecebido) >= total && (
                       <div className="flex justify-between text-green-600">
@@ -360,7 +467,7 @@ const PDV = () => {
               <Button 
                 onClick={finalizarVenda}
                 className="w-full h-12 bg-primary hover:bg-blue-dark text-lg font-semibold"
-                disabled={carrinho.length === 0}
+                disabled={carrinho.length === 0 || !caixaAberto}
               >
                 <DollarSign className="w-5 h-5 mr-2" />
                 Finalizar Venda
