@@ -9,6 +9,166 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounts_payable: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string
+          id: string
+          issue_date: string | null
+          paid_amount: number | null
+          payment_method: string | null
+          remaining_amount: number
+          status: Database["public"]["Enums"]["account_status"] | null
+          supplier_id: string | null
+          supplier_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          issue_date?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          remaining_amount: number
+          status?: Database["public"]["Enums"]["account_status"] | null
+          supplier_id?: string | null
+          supplier_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          issue_date?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          remaining_amount?: number
+          status?: Database["public"]["Enums"]["account_status"] | null
+          supplier_id?: string | null
+          supplier_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_payable_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts_receivable: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_document: string | null
+          customer_name: string
+          customer_phone: string | null
+          description: string | null
+          due_date: string
+          id: string
+          issue_date: string | null
+          paid_amount: number | null
+          payment_method: string | null
+          reference_id: string | null
+          remaining_amount: number
+          status: Database["public"]["Enums"]["account_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_document?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          issue_date?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          reference_id?: string | null
+          remaining_amount: number
+          status?: Database["public"]["Enums"]["account_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_document?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          issue_date?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          reference_id?: string | null
+          remaining_amount?: number
+          status?: Database["public"]["Enums"]["account_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cash_sessions: {
+        Row: {
+          closed_at: string | null
+          closing_amount: number | null
+          difference: number | null
+          expected_amount: number | null
+          id: string
+          notes: string | null
+          opened_at: string | null
+          opening_amount: number
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          closing_amount?: number | null
+          difference?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string | null
+          opening_amount?: number
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          closing_amount?: number | null
+          difference?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string | null
+          opening_amount?: number
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -62,6 +222,83 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      financial_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          cash_balance: number | null
+          created_at: string | null
+          description: string
+          id: string
+          notes: string | null
+          reference_id: string | null
+          transaction_date: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          cash_balance?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          transaction_date?: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          cash_balance?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          transaction_date?: string | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integrations: {
         Row: {
@@ -334,6 +571,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_status: "pendente" | "pago" | "vencido" | "cancelado"
       module_permission:
         | "dashboard"
         | "pdv"
@@ -344,6 +582,16 @@ export type Database = {
         | "fornecedores"
         | "configuracoes"
         | "usuarios"
+      transaction_type:
+        | "entrada"
+        | "saida"
+        | "abertura_caixa"
+        | "fechamento_caixa"
+        | "sangria"
+        | "suprimento"
+        | "venda"
+        | "recebimento"
+        | "pagamento"
       user_type: "superadmin" | "gerente" | "vendedor" | "estoquista"
     }
     CompositeTypes: {
@@ -460,6 +708,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["pendente", "pago", "vencido", "cancelado"],
       module_permission: [
         "dashboard",
         "pdv",
@@ -470,6 +719,17 @@ export const Constants = {
         "fornecedores",
         "configuracoes",
         "usuarios",
+      ],
+      transaction_type: [
+        "entrada",
+        "saida",
+        "abertura_caixa",
+        "fechamento_caixa",
+        "sangria",
+        "suprimento",
+        "venda",
+        "recebimento",
+        "pagamento",
       ],
       user_type: ["superadmin", "gerente", "vendedor", "estoquista"],
     },
