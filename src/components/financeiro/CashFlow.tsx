@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +13,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { ResponsiveTable, ResponsiveTableRow } from './ResponsiveTable';
+import { TableCell } from '@/components/ui/table';
 
 export const CashFlow = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -119,29 +119,29 @@ export const CashFlow = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Wallet className="w-5 h-5" />
-          <h3 className="text-lg font-semibold">Fluxo de Caixa</h3>
+          <Wallet className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <h3 className="text-base sm:text-lg font-semibold">Fluxo de Caixa</h3>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 w-full sm:w-auto">
               <Plus className="w-4 h-4" />
-              Nova Transação
+              <span className="text-sm">Nova Transação</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="w-[95vw] max-w-[425px] mx-auto">
             <DialogHeader>
-              <DialogTitle>Nova Transação Financeira</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">Nova Transação Financeira</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo *</Label>
+                <Label htmlFor="type" className="text-sm">Tipo *</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -156,7 +156,7 @@ export const CashFlow = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Valor *</Label>
+                <Label htmlFor="amount" className="text-sm">Valor *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -164,34 +164,37 @@ export const CashFlow = () => {
                   placeholder="0,00"
                   value={formData.amount}
                   onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição *</Label>
+                <Label htmlFor="description" className="text-sm">Descrição *</Label>
                 <Input
                   id="description"
                   placeholder="Descrição da transação"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
+                <Label htmlFor="notes" className="text-sm">Observações</Label>
                 <Textarea
                   id="notes"
                   placeholder="Observações adicionais (opcional)"
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="w-full min-h-[80px]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={createTransaction.isPending}>
+                <Button type="submit" disabled={createTransaction.isPending} className="w-full sm:w-auto">
                   {createTransaction.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
               </div>
@@ -200,44 +203,66 @@ export const CashFlow = () => {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Últimas Transações</CardTitle>
+      <Card className="w-full overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Últimas Transações</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {isLoading ? (
-            <div className="text-center py-4">Carregando transações...</div>
+            <div className="text-center py-8 text-sm text-muted-foreground">Carregando transações...</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="w-full overflow-hidden">
+              <ResponsiveTable headers={['Data', 'Tipo', 'Descrição', 'Usuário', 'Valor']}>
                 {transactions?.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
+                  <ResponsiveTableRow
+                    key={transaction.id}
+                    mobileContent={
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Badge className={`${getTypeColor(transaction.type)} text-xs`}>
+                            <div className="flex items-center gap-1">
+                              {getTypeIcon(transaction.type)}
+                              {getTypeLabel(transaction.type)}
+                            </div>
+                          </Badge>
+                          <span className={`font-bold text-sm ${
+                            ['entrada', 'venda', 'recebimento'].includes(transaction.type) 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {['entrada', 'venda', 'recebimento'].includes(transaction.type) ? '+' : '-'}
+                            {formatCurrency(Math.abs(transaction.amount))}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm break-words">{transaction.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {transaction.profiles?.full_name || transaction.profiles?.username || 'Sistema'}
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <TableCell className="text-xs sm:text-sm">
                       {format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getTypeColor(transaction.type)}>
+                      <Badge className={`${getTypeColor(transaction.type)} text-xs`}>
                         <div className="flex items-center gap-1">
                           {getTypeIcon(transaction.type)}
-                          {getTypeLabel(transaction.type)}
+                          <span className="hidden sm:inline">{getTypeLabel(transaction.type)}</span>
                         </div>
                       </Badge>
                     </TableCell>
-                    <TableCell>{transaction.description}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm max-w-[200px] truncate">{transaction.description}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {transaction.profiles?.full_name || transaction.profiles?.username || 'Sistema'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className={`font-medium ${
+                      <span className={`font-medium text-xs sm:text-sm ${
                         ['entrada', 'venda', 'recebimento'].includes(transaction.type) 
                           ? 'text-green-600' 
                           : 'text-red-600'
@@ -246,17 +271,21 @@ export const CashFlow = () => {
                         {formatCurrency(Math.abs(transaction.amount))}
                       </span>
                     </TableCell>
-                  </TableRow>
+                  </ResponsiveTableRow>
                 ))}
                 {!transactions?.length && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                  <ResponsiveTableRow mobileContent={
+                    <div className="text-center py-4 text-sm text-muted-foreground">
+                      Nenhuma transação encontrada
+                    </div>
+                  }>
+                    <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
                       Nenhuma transação encontrada
                     </TableCell>
-                  </TableRow>
+                  </ResponsiveTableRow>
                 )}
-              </TableBody>
-            </Table>
+              </ResponsiveTable>
+            </div>
           )}
         </CardContent>
       </Card>

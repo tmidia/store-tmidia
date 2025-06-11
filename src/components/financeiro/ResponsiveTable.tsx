@@ -10,14 +10,16 @@ interface ResponsiveTableProps {
 
 export const ResponsiveTable = ({ headers, children }: ResponsiveTableProps) => {
   return (
-    <>
+    <div className="w-full overflow-hidden">
       {/* Desktop Table */}
-      <div className="hidden md:block">
-        <Table>
+      <div className="hidden md:block w-full overflow-x-auto">
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               {headers.map((header, index) => (
-                <TableHead key={index}>{header}</TableHead>
+                <TableHead key={index} className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                  {header}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -28,10 +30,10 @@ export const ResponsiveTable = ({ headers, children }: ResponsiveTableProps) => 
       </div>
 
       {/* Mobile Cards */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-3 w-full">
         {children}
       </div>
-    </>
+    </div>
   );
 };
 
@@ -50,8 +52,8 @@ export const ResponsiveTableRow = ({ children, mobileContent }: ResponsiveTableR
 
       {/* Mobile Card */}
       {mobileContent && (
-        <Card className="md:hidden">
-          <CardContent className="p-4">
+        <Card className="md:hidden w-full">
+          <CardContent className="p-3 sm:p-4">
             {mobileContent}
           </CardContent>
         </Card>
