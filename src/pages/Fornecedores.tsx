@@ -12,19 +12,19 @@ import EmptySupplierState from '@/components/EmptySupplierState';
 interface Supplier {
   id: string;
   name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  cnpj?: string;
-  cpf?: string;
-  contact_person?: string;
-  supplier_type?: string;
-  company_name?: string;
-  created_at?: string;
-  updated_at?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  cnpj?: string | null;
+  cpf?: string | null;
+  contact_person?: string | null;
+  supplier_type?: string | null;
+  company_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 const Fornecedores = () => {
