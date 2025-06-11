@@ -20,6 +20,8 @@ interface Product {
   sale_price: number;
   stock_quantity: number;
   minimum_stock: number;
+  created_at?: string;
+  updated_at?: string;
   categories?: { name: string };
   suppliers?: { name: string };
 }

@@ -35,7 +35,7 @@ const UserManagement = () => {
     full_name: '',
     email: '',
     password: '',
-    user_type: 'vendedor' as const,
+    user_type: 'vendedor' as Database['public']['Enums']['user_type'],
     permissions: [] as string[]
   });
   const { toast } = useToast();
@@ -307,7 +307,7 @@ const UserManagement = () => {
 
                 <div>
                   <Label htmlFor="user_type">Tipo de Usuário</Label>
-                  <Select value={formData.user_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, user_type: value }))}>
+                  <Select value={formData.user_type} onValueChange={(value: Database['public']['Enums']['user_type']) => setFormData(prev => ({ ...prev, user_type: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

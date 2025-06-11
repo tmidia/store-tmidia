@@ -29,7 +29,11 @@ interface Supplier {
   state?: string;
   zip_code?: string;
   cnpj?: string;
+  cpf?: string;
   contact_person?: string;
+  supplier_type?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const Fornecedores = () => {
