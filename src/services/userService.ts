@@ -34,58 +34,81 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
   console.log('Iniciando criação de usuário:', { email: formData.email, username: formData.username });
 
-  // Usar admin API para criar o usuário diretamente
-  const { data: adminUser, error: adminError } = await supabase.auth.admin.createUser({
+  // Usar signup normal do Supabase
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email: formData.email,
     password: formData.password,
-    email_confirm: true,
-    user_metadata: {
-      username: formData.username,
-      full_name: capitalizedName,
-      user_type: formData.user_type
+    options: {
+      data: {
+        username: formData.username,
+        full_name: capitalizedName,
+        user_type: formData.user_type
+      }
     }
   });
 
-  if (adminError) {
-    console.error('Erro ao criar usuário via admin:', adminError);
-    throw new Error(adminError.message);
+  if (signUpError) {
+    console.error('Erro ao criar usuário:', signUpError);
+    throw new Error(signUpError.message);
   }
 
-  if (!adminUser.user) {
+  if (!signUpData.user) {
     throw new Error('Falha ao criar usuário');
   }
 
-  console.log('Usuário criado via admin API:', adminUser.user.id);
+  console.log('Usuário criado:', signUpData.user.id);
 
   try {
-    // Criar o perfil diretamente
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: adminUser.user.id,
-        username: formData.username,
-        full_name: capitalizedName,
-        user_type: formData.user_type,
-        is_active: true
-      });
+    // Aguardar um pouco para o trigger criar o perfil automaticamente
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    if (profileError) {
-      console.error('Erro ao criar perfil:', profileError);
-      // Se falhar ao criar o perfil, tentar deletar o usuário
-      try {
-        await supabase.auth.admin.deleteUser(adminUser.user.id);
-      } catch (cleanupError) {
-        console.error('Erro ao limpar usuário:', cleanupError);
+    // Verificar se o perfil foi criado automaticamente, se não, criar manualmente
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', signUpData.user.id)
+      .single();
+
+    if (!existingProfile) {
+      // Criar o perfil manualmente se não foi criado automaticamente
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: signUpData.user.id,
+          username: formData.username,
+          full_name: capitalizedName,
+          user_type: formData.user_type,
+          is_active: true
+        });
+
+      if (profileError) {
+        console.error('Erro ao criar perfil:', profileError);
+        throw new Error('Erro ao criar perfil do usuário');
       }
-      throw new Error(profileError.message);
+    } else {
+      // Atualizar o perfil existente com os dados corretos
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          username: formData.username,
+          full_name: capitalizedName,
+          user_type: formData.user_type,
+          is_active: true
+        })
+        .eq('id', signUpData.user.id);
+
+      if (updateError) {
+        console.error('Erro ao atualizar perfil:', updateError);
+        throw new Error('Erro ao atualizar perfil do usuário');
+      }
     }
 
-    console.log('Perfil criado com sucesso');
+    console.log('Perfil criado/atualizado com sucesso');
 
     // Criar permissões se especificadas
     if (formData.permissions && formData.permissions.length > 0) {
       const permissions = formData.permissions.map(module => ({
-        user_id: adminUser.user.id,
+        user_id: signUpData.user.id,
         module: module as any
       }));
 

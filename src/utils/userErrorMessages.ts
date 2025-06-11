@@ -20,6 +20,10 @@ export const getUserErrorMessage = (error: any): string => {
     return "Erro de conexão. Verifique sua internet e tente novamente.";
   } else if (error.message.includes('Admin API') || error.message.includes('service_role')) {
     return "Erro de configuração. Entre em contato com o administrador do sistema.";
+  } else if (error.message.includes('Load failed')) {
+    return "Erro de conexão com o servidor. Verifique sua internet e tente novamente.";
+  } else if (error.message.includes('Signup is disabled')) {
+    return "Cadastro de novos usuários está desabilitado no momento.";
   }
   
   return "Erro ao salvar usuário. Tente novamente.";
