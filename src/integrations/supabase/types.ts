@@ -33,6 +33,81 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          cnpj: string | null
+          company_name: string
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          company_name: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          company_name?: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      integrations: {
+        Row: {
+          created_at: string | null
+          id: string
+          make_auth_token: string | null
+          make_enabled: boolean | null
+          make_webhook_url: string | null
+          n8n_auth_token: string | null
+          n8n_enabled: boolean | null
+          n8n_webhook_url: string | null
+          updated_at: string | null
+          whatsapp_daily_sales: boolean | null
+          whatsapp_due_accounts: boolean | null
+          whatsapp_low_stock_alert: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          make_auth_token?: string | null
+          make_enabled?: boolean | null
+          make_webhook_url?: string | null
+          n8n_auth_token?: string | null
+          n8n_enabled?: boolean | null
+          n8n_webhook_url?: string | null
+          updated_at?: string | null
+          whatsapp_daily_sales?: boolean | null
+          whatsapp_due_accounts?: boolean | null
+          whatsapp_low_stock_alert?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          make_auth_token?: string | null
+          make_enabled?: boolean | null
+          make_webhook_url?: string | null
+          n8n_auth_token?: string | null
+          n8n_enabled?: boolean | null
+          n8n_webhook_url?: string | null
+          updated_at?: string | null
+          whatsapp_daily_sales?: boolean | null
+          whatsapp_due_accounts?: boolean | null
+          whatsapp_low_stock_alert?: boolean | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -99,7 +174,10 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          is_active: boolean | null
+          last_activity: string | null
           updated_at: string | null
+          user_type: Database["public"]["Enums"]["user_type"] | null
           username: string
         }
         Insert: {
@@ -107,7 +185,10 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean | null
+          last_activity?: string | null
           updated_at?: string | null
+          user_type?: Database["public"]["Enums"]["user_type"] | null
           username: string
         }
         Update: {
@@ -115,7 +196,10 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
           updated_at?: string | null
+          user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string
         }
         Relationships: []
@@ -127,12 +211,14 @@ export type Database = {
           cnpj: string | null
           company_name: string | null
           contact_person: string | null
+          cpf: string | null
           created_at: string | null
           email: string | null
           id: string
           name: string
           phone: string | null
           state: string | null
+          supplier_type: string | null
           updated_at: string | null
           zip_code: string | null
         }
@@ -142,12 +228,14 @@ export type Database = {
           cnpj?: string | null
           company_name?: string | null
           contact_person?: string | null
+          cpf?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           name: string
           phone?: string | null
           state?: string | null
+          supplier_type?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
@@ -157,16 +245,83 @@ export type Database = {
           cnpj?: string | null
           company_name?: string | null
           contact_person?: string | null
+          cpf?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           name?: string
           phone?: string | null
           state?: string | null
+          supplier_type?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
         Relationships: []
+      }
+      system_parameters: {
+        Row: {
+          allow_manual_discount: boolean | null
+          created_at: string | null
+          enable_pdv: boolean | null
+          id: string
+          show_daily_report: boolean | null
+          show_dashboard_charts: boolean | null
+          show_due_accounts: boolean | null
+          show_low_stock_alert: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_manual_discount?: boolean | null
+          created_at?: string | null
+          enable_pdv?: boolean | null
+          id?: string
+          show_daily_report?: boolean | null
+          show_dashboard_charts?: boolean | null
+          show_due_accounts?: boolean | null
+          show_low_stock_alert?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_manual_discount?: boolean | null
+          created_at?: string | null
+          enable_pdv?: boolean | null
+          id?: string
+          show_daily_report?: boolean | null
+          show_dashboard_charts?: boolean | null
+          show_due_accounts?: boolean | null
+          show_low_stock_alert?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          module: Database["public"]["Enums"]["module_permission"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module: Database["public"]["Enums"]["module_permission"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module?: Database["public"]["Enums"]["module_permission"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -176,7 +331,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      module_permission:
+        | "dashboard"
+        | "pdv"
+        | "produtos"
+        | "estoque"
+        | "financeiro"
+        | "relatorios"
+        | "fornecedores"
+        | "configuracoes"
+        | "usuarios"
+      user_type: "superadmin" | "gerente" | "vendedor" | "estoquista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -291,6 +456,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      module_permission: [
+        "dashboard",
+        "pdv",
+        "produtos",
+        "estoque",
+        "financeiro",
+        "relatorios",
+        "fornecedores",
+        "configuracoes",
+        "usuarios",
+      ],
+      user_type: ["superadmin", "gerente", "vendedor", "estoquista"],
+    },
   },
 } as const

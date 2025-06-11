@@ -19,6 +19,11 @@ import ChangePasswordForm from "./components/ChangePasswordForm";
 import Estoque from "./pages/Estoque";
 import Fornecedores from "./pages/Fornecedores";
 import Categorias from "./pages/Categorias";
+import UserManagement from "./components/UserManagement";
+import CompanySettings from "./components/CompanySettings";
+import SystemParameters from "./components/SystemParameters";
+import IntegrationsSettings from "./components/IntegrationsSettings";
+import LogoutButton from "./components/LogoutButton";
 
 const queryClient = new QueryClient();
 
@@ -63,8 +68,12 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1">
-          <div className="lg:hidden p-4 border-b border-gray-200 bg-white">
+          <div className="lg:hidden p-4 border-b border-gray-200 bg-white flex justify-between items-center">
             <SidebarTrigger />
+            <LogoutButton />
+          </div>
+          <div className="hidden lg:flex justify-end p-4 border-b border-gray-200 bg-white">
+            <LogoutButton />
           </div>
           {children}
         </main>
@@ -164,8 +173,8 @@ const App = () => (
             <ProtectedRoute>
               <MainLayout>
                 <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Usuários</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-6">Gestão de Usuários</h1>
+                  <UserManagement />
                 </div>
               </MainLayout>
             </ProtectedRoute>
@@ -175,8 +184,11 @@ const App = () => (
               <MainLayout>
                 <div className="p-6">
                   <h1 className="text-3xl font-bold text-gray-900 mb-6">Configurações</h1>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-6">
+                  <div className="grid gap-6">
+                    <CompanySettings />
+                    <SystemParameters />
+                    <IntegrationsSettings />
+                    <div className="grid gap-6 md:grid-cols-2">
                       <UserProfile />
                       <ChangePasswordForm />
                     </div>
