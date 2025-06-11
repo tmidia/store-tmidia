@@ -1,0 +1,16 @@
+
+export const getUserErrorMessage = (error: any): string => {
+  if (error.message.includes('User already registered')) {
+    return "Este email já está cadastrado no sistema.";
+  } else if (error.message.includes('invalid email')) {
+    return "Por favor, insira um email válido.";
+  } else if (error.message.includes('password')) {
+    return "A senha deve ter pelo menos 6 caracteres.";
+  } else if (error.message.includes('Username should be') || error.message.includes('unique')) {
+    return "Este nome de usuário já existe. Escolha outro.";
+  } else if (error.message.includes('duplicate key')) {
+    return "Este usuário já existe no sistema.";
+  }
+  
+  return "Erro ao salvar usuário.";
+};
