@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,6 +13,8 @@ import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
 import PDV from "./pages/PDV";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./components/UserProfile";
+import ChangePasswordForm from "./components/ChangePasswordForm";
 
 const queryClient = new QueryClient();
 
