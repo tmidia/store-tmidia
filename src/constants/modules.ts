@@ -1,5 +1,5 @@
 
 export const MODULES = [
-  'dashboard', 'pdv', 'produtos', 'estoque', 'fornecedores', 'financeiro', 
+  'dashboard', 'pdv', 'produtos', 'estoque', 'fornecedores', 'categorias', 'financeiro', 
   'relatorios', 'configuracoes', 'usuarios'
 ];

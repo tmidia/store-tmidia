@@ -9,7 +9,8 @@ import {
   BarChart3, 
   Users, 
   Settings,
-  Building2
+  Building2,
+  Tag
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -45,6 +46,11 @@ const menuItems = [
     title: "Fornecedores",
     url: "/fornecedores",
     icon: Building2,
+  },
+  {
+    title: "Categorias",
+    url: "/categorias",
+    icon: Tag,
   },
   {
     title: "PDV",
