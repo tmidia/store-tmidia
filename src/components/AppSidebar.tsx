@@ -8,7 +8,8 @@ import {
   Receipt, 
   BarChart3, 
   Users, 
-  Settings 
+  Settings,
+  Building2
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -39,6 +40,11 @@ const menuItems = [
     title: "Estoque",
     url: "/estoque",
     icon: Archive,
+  },
+  {
+    title: "Fornecedores",
+    url: "/fornecedores",
+    icon: Building2,
   },
   {
     title: "PDV",
