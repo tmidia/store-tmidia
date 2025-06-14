@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
 import { capitalizeWords } from '@/utils/userUtils';
@@ -20,12 +19,27 @@ export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
           .select('module')
           .eq('user_id', profile.id);
 
-        // Buscar email do usuário na tabela auth.users através de uma função
-        const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+        // Buscar email do usuário na tabela auth.users através da API admin
+        let userEmail = '';
+        try {
+          const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+          userEmail = userData.user?.email || '';
+        } catch (error) {
+          console.error('Erro ao buscar email do usuário:', error);
+          // Se não conseguir buscar via admin, tentar via função
+          try {
+            const { data: emailData } = await supabase.functions.invoke('get-user-email', {
+              body: { user_id: profile.id }
+            });
+            userEmail = emailData?.email || '';
+          } catch (fnError) {
+            console.error('Erro ao buscar email via função:', fnError);
+          }
+        }
         
         return {
           ...profile,
-          email: userData.user?.email || '',
+          email: userEmail,
           permissions: permissions?.map(p => p.module) || []
         };
       })

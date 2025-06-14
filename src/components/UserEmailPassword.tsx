@@ -28,7 +28,7 @@ export const UserEmailPassword = ({
           required={!isEditMode}
           disabled={isEditMode}
           className="w-full"
-          placeholder="Ex: joao@empresa.com"
+          placeholder={isEditMode ? formData.email : "Ex: joao@empresa.com"}
         />
         {validationErrors.email && (
           <p className="text-sm text-red-500">{validationErrors.email}</p>
