@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,15 +45,34 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Tentativa de login para:', email);
+      console.log('🔐 Iniciando tentativa de login para:', email);
       
+      // Verificar se o usuário existe primeiro
+      const { data: existingUser, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', '(SELECT id FROM auth.users WHERE email = $1)')
+        .single();
+      
+      console.log('👤 Verificação de usuário:', { existingUser, userCheckError });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       });
 
+      console.log('🔑 Resposta do login:', { 
+        user: data.user?.id, 
+        session: !!data.session,
+        error: error?.message 
+      });
+
       if (error) {
-        console.error('❌ Erro no login:', error);
+        console.error('❌ Erro detalhado no login:', {
+          message: error.message,
+          status: error.status,
+          details: error
+        });
         
         let errorMessage = "Erro no login";
         if (error.message.includes('Invalid login credentials')) {
@@ -65,6 +83,8 @@ const Login = () => {
           errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
         } else if (error.message.includes('Database error')) {
           errorMessage = "Erro temporário do sistema. Tente novamente em alguns instantes.";
+        } else {
+          errorMessage = `Erro específico: ${error.message}`;
         }
         
         toast({
@@ -73,11 +93,20 @@ const Login = () => {
           variant: "destructive",
         });
       } else if (data.user && data.session) {
-        console.log('✅ Login realizado com sucesso:', data.user.email);
+        console.log('✅ Login realizado com sucesso para:', data.user.email);
+        
+        // Verificar se o perfil foi criado/atualizado
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        console.log('👤 Perfil do usuário:', { profile, profileError });
         
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao Sistema de Gestão.",
+          description: `Bem-vindo, ${profile?.full_name || data.user.email}!`,
         });
         
         navigate('/dashboard');
@@ -86,7 +115,7 @@ const Login = () => {
       console.error('💥 Erro inesperado no login:', error);
       toast({
         title: "Erro no login",
-        description: "Erro inesperado. Tente novamente.",
+        description: `Erro inesperado: ${error.message}`,
         variant: "destructive",
       });
     } finally {

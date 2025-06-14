@@ -12,13 +12,32 @@ export const useAuth = () => {
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event, session?.user?.id);
+        console.log('🔐 Auth state changed:', event, {
+          userId: session?.user?.id,
+          email: session?.user?.email,
+          hasSession: !!session
+        });
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log('✅ Usuário autenticado:', session?.user?.email);
+          
+          // Verificar se o perfil existe
+          if (session?.user) {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              console.log('👤 Perfil carregado:', { profile, error });
+            } catch (profileError) {
+              console.error('❌ Erro ao carregar perfil:', profileError);
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 Usuário desconectado');
         }
@@ -33,14 +52,18 @@ export const useAuth = () => {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Erro ao verificar sessão:', error);
+          console.error('❌ Erro ao verificar sessão:', error);
         } else {
-          console.log('🔍 Sessão existente:', currentSession?.user?.id);
+          console.log('🔍 Sessão existente verificada:', {
+            userId: currentSession?.user?.id,
+            email: currentSession?.user?.email,
+            hasSession: !!currentSession
+          });
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
         }
       } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
+        console.error('💥 Erro inesperado ao verificar sessão:', error);
       } finally {
         setIsLoading(false);
       }
@@ -55,9 +78,10 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Iniciando logout...');
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Erro ao fazer logout:', error);
+        console.error('❌ Erro ao fazer logout:', error);
         throw error;
       }
       
@@ -69,7 +93,7 @@ export const useAuth = () => {
       
       console.log('✅ Logout realizado com sucesso');
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('💥 Erro no logout:', error);
       throw error;
     }
   };
