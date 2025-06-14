@@ -5,6 +5,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type UserPermission = Database['public']['Tables']['user_permissions']['Row'];
 
 export interface UserWithPermissions extends Profile {
+  email?: string;
   permissions: string[];
 }
 

@@ -63,7 +63,7 @@ export const UserFormDialog = ({
       setFormData({
         username: editingUser.username,
         full_name: editingUser.full_name || '',
-        email: editingUser.email || '', // Incluir o email do usuário
+        email: editingUser.email || '', // Usar o email do usuário com fallback
         password: '',
         user_type: editingUser.user_type || 'vendedor',
         permissions: Array.isArray(editingUser.permissions) ? editingUser.permissions : []
