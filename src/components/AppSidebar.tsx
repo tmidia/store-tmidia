@@ -25,67 +25,116 @@ import {
   SidebarHeader,
   SidebarFooter
 } from '@/components/ui/sidebar';
+import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 const menuItems = [
   {
     title: "Dashboard",
     url: "/",
     icon: Home,
+    permission: "dashboard" as const,
   },
   {
     title: "Produtos",
     url: "/produtos",
     icon: Package,
+    permission: "produtos" as const,
   },
   {
     title: "Estoque",
     url: "/estoque",
     icon: Archive,
+    permission: "estoque" as const,
   },
   {
     title: "Fornecedores",
     url: "/fornecedores",
     icon: Building2,
+    permission: "fornecedores" as const,
   },
   {
     title: "Categorias",
     url: "/categorias",
     icon: Tag,
+    permission: "produtos" as const, // Categorias usa a mesma permissão de produtos
   },
   {
     title: "PDV",
     url: "/pdv",
     icon: ShoppingCart,
+    permission: "pdv" as const,
   },
   {
     title: "Financeiro",
     url: "/financeiro",
     icon: DollarSign,
+    permission: "financeiro" as const,
   },
   {
     title: "Despesas",
     url: "/despesas",
     icon: Receipt,
+    permission: "financeiro" as const, // Despesas usa a mesma permissão de financeiro
   },
   {
     title: "Relatórios",
     url: "/relatorios",
     icon: BarChart3,
+    permission: "relatorios" as const,
   },
   {
     title: "Usuários",
     url: "/usuarios",
     icon: Users,
+    permission: "usuarios" as const,
+    requireSuperAdmin: true,
   },
   {
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
+    permission: "configuracoes" as const,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const { hasPermission, isSuperAdmin, userProfile, isLoading } = useRoleBasedAccess();
+
+  // Se ainda está carregando as permissões, não mostrar o menu
+  if (isLoading || !userProfile) {
+    return (
+      <Sidebar className="border-r border-gray-200 bg-white">
+        <SidebarHeader className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Package className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">SGA</h2>
+              <p className="text-xs text-gray-600">Sistema de Gestão</p>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="px-4 py-4">
+          <div className="flex items-center justify-center h-32">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
+  // Filtrar itens do menu baseado nas permissões do usuário
+  const visibleMenuItems = menuItems.filter(item => {
+    // Se o item requer superadmin, verificar se o usuário é superadmin
+    if (item.requireSuperAdmin) {
+      return isSuperAdmin();
+    }
+    
+    // Verificar se o usuário tem permissão para o módulo
+    return hasPermission(item.permission);
+  });
 
   return (
     <Sidebar className="border-r border-gray-200 bg-white">
@@ -108,7 +157,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
@@ -136,8 +185,13 @@ export function AppSidebar() {
             <Users className="w-4 h-4 text-gray-600" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Admin</p>
-            <p className="text-xs text-gray-600">Administrador</p>
+            <p className="text-sm font-medium text-gray-900">
+              {userProfile?.user_type === 'superadmin' ? 'Super Admin' : 
+               userProfile?.user_type === 'gerente' ? 'Gerente' : 
+               userProfile?.user_type === 'vendedor' ? 'Vendedor' : 
+               'Estoquista'}
+            </p>
+            <p className="text-xs text-gray-600">{userProfile?.user_type}</p>
           </div>
         </div>
       </SidebarFooter>
