@@ -87,62 +87,39 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(passwordValidation.message);
     }
 
-    console.log('🔐 INICIANDO ATUALIZAÇÃO DE SENHA');
-    console.log('👤 Usuário:', {
-      id: user.id,
-      email: user.email,
-      username: user.username
-    });
+    console.log('🔐 Iniciando atualização de senha simplificada');
+    console.log('👤 Usuário ID:', user.id);
 
     try {
-      console.log('📞 Chamando função edge update-user-password...');
-      
-      const { data: functionResponse, error: functionError } = await supabase.functions.invoke('update-user-password', {
+      const { data: response, error: functionError } = await supabase.functions.invoke('update-user-password', {
         body: {
           user_id: user.id,
           new_password: sanitizedPassword
         }
       });
 
-      console.log('📨 Resposta da função edge:', functionResponse);
+      console.log('📨 Resposta da função:', response);
 
       if (functionError) {
-        console.error('❌ Erro da função edge:', functionError);
+        console.error('❌ Erro da função:', functionError);
         throw new Error(`Erro ao atualizar senha: ${functionError.message}`);
       }
 
-      if (functionResponse?.error) {
-        console.error('❌ Erro na resposta:', functionResponse.error);
-        throw new Error(`Erro ao atualizar senha: ${functionResponse.error}`);
+      if (response?.error) {
+        console.error('❌ Erro na resposta:', response.error);
+        throw new Error(`Erro ao atualizar senha: ${response.error}`);
       }
 
-      if (!functionResponse?.success) {
-        console.error('❌ Resposta sem sucesso:', functionResponse);
-        throw new Error('Falha na atualização da senha - resposta inválida');
+      if (!response?.success) {
+        console.error('❌ Resposta inválida:', response);
+        throw new Error('Falha na atualização da senha');
       }
 
       console.log('✅ Senha atualizada com sucesso!');
-      console.log('📊 Dados:', functionResponse);
       
-    } catch (functionError: any) {
-      console.error('💥 ERRO CRÍTICO ao atualizar senha:', functionError);
-      console.error('🔍 Tipo:', typeof functionError);
-      console.error('📝 Mensagem:', functionError.message);
-      console.error('📋 Stack:', functionError.stack);
-      
-      let errorMessage = 'Falha ao atualizar senha. ';
-      
-      if (functionError.message?.includes('fetch')) {
-        errorMessage += 'Erro de conexão com o servidor.';
-      } else if (functionError.message?.includes('Invalid login credentials')) {
-        errorMessage += 'Erro interno na atualização. Tente novamente.';
-      } else if (functionError.message?.includes('User not found')) {
-        errorMessage += 'Usuário não encontrado.';
-      } else {
-        errorMessage += `Erro: ${functionError.message}`;
-      }
-      
-      throw new Error(errorMessage);
+    } catch (error: any) {
+      console.error('💥 Erro ao atualizar senha:', error);
+      throw new Error(`Falha ao atualizar senha: ${error.message}`);
     }
   }
 
