@@ -15,10 +15,26 @@ serve(async (req) => {
   try {
     const { user_id, new_password } = await req.json()
 
-    console.log('=== INÍCIO DA ATUALIZAÇÃO DE SENHA ===')
+    console.log('=== UPDATE PASSWORD REQUEST ===')
     console.log('User ID:', user_id)
-    console.log('Senha fornecida:', new_password ? 'SIM' : 'NÃO')
-    console.log('Tamanho da senha:', new_password?.length || 0)
+    console.log('Password provided:', !!new_password)
+    console.log('Password length:', new_password?.length || 0)
+
+    if (!user_id) {
+      console.error('❌ User ID missing')
+      return new Response(
+        JSON.stringify({ error: 'User ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!new_password || new_password.length < 6) {
+      console.error('❌ Invalid password length:', new_password?.length || 0)
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Create admin client
     const supabaseAdmin = createClient(
@@ -32,137 +48,95 @@ serve(async (req) => {
       }
     )
 
-    // Validações básicas
-    if (!user_id) {
-      console.error('❌ User ID não fornecido')
-      return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    if (!new_password || new_password.length < 6) {
-      console.error('❌ Senha inválida - tamanho:', new_password?.length || 0)
-      return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Verificar se o usuário existe
-    console.log('🔍 Verificando se usuário existe...')
-    const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    // Get user first to verify existence
+    console.log('🔍 Checking if user exists...')
+    const { data: userData, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(user_id)
     
-    if (getUserError) {
-      console.error('❌ Erro ao buscar usuário:', getUserError)
-      return new Response(
-        JSON.stringify({ error: `User lookup failed: ${getUserError.message}` }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    if (!existingUser.user) {
-      console.error('❌ Usuário não encontrado')
+    if (getUserError || !userData.user) {
+      console.error('❌ User not found:', getUserError?.message)
       return new Response(
         JSON.stringify({ error: 'User not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('✅ Usuário encontrado:', existingUser.user.email)
-    console.log('📧 Email do usuário:', existingUser.user.email)
-    console.log('🆔 ID do usuário:', existingUser.user.id)
+    console.log('✅ User found:', userData.user.email)
 
-    // Primeiro, invalidar todas as sessões do usuário
-    console.log('🔄 Invalidando sessões existentes...')
+    // Sign out all sessions for this user first
+    console.log('🔄 Signing out all user sessions...')
     try {
-      await supabaseAdmin.auth.admin.signOut(user_id, 'global')
-      console.log('✅ Sessões invalidadas com sucesso')
-    } catch (signOutError) {
-      console.log('⚠️ Aviso: Não foi possível invalidar sessões:', signOutError)
-      // Continuar mesmo se não conseguir invalidar sessões
+      const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(user_id, 'global')
+      if (signOutError) {
+        console.log('⚠️ Sign out warning:', signOutError.message)
+      } else {
+        console.log('✅ All sessions signed out')
+      }
+    } catch (signOutErr) {
+      console.log('⚠️ Sign out exception:', signOutErr)
     }
 
-    // Aguardar um pouco para garantir que as sessões foram invalidadas
+    // Wait a moment for sessions to be invalidated
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Atualizar a senha
-    console.log('🔐 Atualizando senha...')
+    // Update password using admin API
+    console.log('🔐 Updating password via Admin API...')
     const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
       { 
-        password: new_password
+        password: new_password,
+        email_confirm: false // Ensure email confirmation is not required
       }
     )
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar senha:', updateError)
-      console.error('Detalhes do erro:', JSON.stringify(updateError, null, 2))
+      console.error('❌ Password update failed:', updateError.message)
+      console.error('Error details:', JSON.stringify(updateError, null, 2))
       return new Response(
         JSON.stringify({ 
-          error: `Failed to update password: ${updateError.message}`,
+          error: `Password update failed: ${updateError.message}`,
           details: updateError
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('✅ Senha atualizada com sucesso!')
-    console.log('📊 Dados retornados:', updateData?.user?.email)
+    console.log('✅ Password updated successfully!')
+    console.log('Updated user email:', updateData.user?.email)
+    console.log('Updated at:', updateData.user?.updated_at)
 
-    // Verificar se realmente foi atualizado
-    console.log('🔍 Verificando atualização...')
-    const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    // Double-check the update by fetching user again
+    console.log('🔍 Verifying password update...')
+    const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(user_id)
     
     if (verifyError) {
-      console.error('⚠️ Erro ao verificar atualização:', verifyError)
+      console.error('⚠️ Verification failed:', verifyError.message)
     } else {
-      console.log('✅ Verificação bem-sucedida:', verifyUser?.user?.email)
-      console.log('📅 Última atualização:', verifyUser?.user?.updated_at)
+      console.log('✅ Verification successful')
+      console.log('User updated_at after change:', verifyData.user?.updated_at)
     }
 
-    console.log('=== FIM DA ATUALIZAÇÃO DE SENHA ===')
+    console.log('=== UPDATE PASSWORD COMPLETE ===')
 
     return new Response(
       JSON.stringify({ 
+        success: true,
         message: 'Password updated successfully',
-        user_id: updateData?.user?.id,
-        email: updateData?.user?.email,
-        updated_at: updateData?.user?.updated_at
+        user_id: updateData.user?.id,
+        email: updateData.user?.email,
+        updated_at: updateData.user?.updated_at
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('💥 ERRO CRÍTICO na função edge:', error)
-    console.error('Stack trace:', error.stack)
+    console.error('💥 CRITICAL ERROR in update-user-password:', error)
+    console.error('Error stack:', error.stack)
     return new Response(
       JSON.stringify({ 
         error: `Internal server error: ${error.message}`,
         stack: error.stack
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

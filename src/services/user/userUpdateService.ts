@@ -87,8 +87,8 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(passwordValidation.message);
     }
 
-    console.log('🔐 INICIANDO PROCESSO DE ATUALIZAÇÃO DE SENHA');
-    console.log('👤 Usuário alvo:', {
+    console.log('🔐 INICIANDO ATUALIZAÇÃO DE SENHA');
+    console.log('👤 Usuário:', {
       id: user.id,
       email: user.email,
       username: user.username
@@ -107,35 +107,39 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       console.log('📨 Resposta da função edge:', functionResponse);
 
       if (functionError) {
-        console.error('❌ Erro retornado pela função edge:', functionError);
+        console.error('❌ Erro da função edge:', functionError);
         throw new Error(`Erro ao atualizar senha: ${functionError.message}`);
       }
 
       if (functionResponse?.error) {
-        console.error('❌ Erro dentro da resposta da função:', functionResponse.error);
+        console.error('❌ Erro na resposta:', functionResponse.error);
         throw new Error(`Erro ao atualizar senha: ${functionResponse.error}`);
       }
 
-      console.log('✅ Senha atualizada com sucesso via função edge');
-      console.log('📊 Dados da resposta:', functionResponse);
+      if (!functionResponse?.success) {
+        console.error('❌ Resposta sem sucesso:', functionResponse);
+        throw new Error('Falha na atualização da senha - resposta inválida');
+      }
+
+      console.log('✅ Senha atualizada com sucesso!');
+      console.log('📊 Dados:', functionResponse);
       
     } catch (functionError: any) {
-      console.error('💥 ERRO CRÍTICO ao chamar função de atualização de senha:', functionError);
-      console.error('🔍 Tipo do erro:', typeof functionError);
-      console.error('📝 Mensagem do erro:', functionError.message);
-      console.error('📋 Stack trace:', functionError.stack);
+      console.error('💥 ERRO CRÍTICO ao atualizar senha:', functionError);
+      console.error('🔍 Tipo:', typeof functionError);
+      console.error('📝 Mensagem:', functionError.message);
+      console.error('📋 Stack:', functionError.stack);
       
-      // Fornecer uma mensagem de erro mais específica
       let errorMessage = 'Falha ao atualizar senha. ';
       
       if (functionError.message?.includes('fetch')) {
         errorMessage += 'Erro de conexão com o servidor.';
       } else if (functionError.message?.includes('Invalid login credentials')) {
-        errorMessage += 'Credenciais inválidas detectadas durante a atualização.';
+        errorMessage += 'Erro interno na atualização. Tente novamente.';
       } else if (functionError.message?.includes('User not found')) {
         errorMessage += 'Usuário não encontrado.';
       } else {
-        errorMessage += `Erro técnico: ${functionError.message}`;
+        errorMessage += `Erro: ${functionError.message}`;
       }
       
       throw new Error(errorMessage);
