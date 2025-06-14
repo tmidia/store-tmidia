@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import LoginForm from '@/components/auth/LoginForm';
 import PasswordResetForm from '@/components/auth/PasswordResetForm';
 import NewPasswordForm from '@/components/auth/NewPasswordForm';
 import { usePasswordReset } from '@/hooks/usePasswordReset';
+import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +24,15 @@ const Login = () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const navigate = useNavigate();
+  
+  const { user } = useAuth();
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const {
     isNewPasswordMode,
@@ -35,9 +47,6 @@ const Login = () => {
 
     try {
       console.log('🔐 Tentativa de login para:', email);
-      
-      // Limpar possíveis sessões anteriores
-      await supabase.auth.signOut();
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -65,33 +74,6 @@ const Login = () => {
         });
       } else if (data.user && data.session) {
         console.log('✅ Login realizado com sucesso:', data.user.email);
-        
-        // Verificar se o usuário tem perfil
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.warn('⚠️ Perfil não encontrado, criando...');
-          
-          // Criar perfil se não existir
-          const { error: createProfileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              username: email.split('@')[0],
-              full_name: data.user.user_metadata?.full_name || '',
-              user_type: 'vendedor'
-            });
-
-          if (createProfileError) {
-            console.error('Erro ao criar perfil:', createProfileError);
-          }
-        }
-
-        localStorage.setItem('isAuthenticated', 'true');
         
         toast({
           title: "Login realizado com sucesso!",

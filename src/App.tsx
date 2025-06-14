@@ -7,8 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from '@supabase/supabase-js';
+import { useAuth } from "@/hooks/useAuth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
@@ -25,33 +24,15 @@ import CompanySettings from "./components/CompanySettings";
 import SystemParameters from "./components/SystemParameters";
 import IntegrationsSettings from "./components/IntegrationsSettings";
 import LogoutButton from "./components/LogoutButton";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 // Componente para verificar autenticação
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -92,108 +73,128 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={
-            <ProtectedRoute>
+            <AuthWrapper>
               <MainLayout>
                 <Dashboard />
               </MainLayout>
-            </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <AuthWrapper>
               <MainLayout>
                 <Dashboard />
               </MainLayout>
-            </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/produtos" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Produtos />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="produtos">
+                <MainLayout>
+                  <Produtos />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/pdv" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <PDV />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="pdv">
+                <MainLayout>
+                  <PDV />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/estoque" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Estoque />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="estoque">
+                <MainLayout>
+                  <Estoque />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/fornecedores" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Fornecedores />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="fornecedores">
+                <MainLayout>
+                  <Fornecedores />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/categorias" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Categorias />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="produtos">
+                <MainLayout>
+                  <Categorias />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/financeiro" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Financeiro />
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="financeiro">
+                <MainLayout>
+                  <Financeiro />
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/despesas" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Despesas</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                </div>
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="financeiro">
+                <MainLayout>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900">Despesas</h1>
+                    <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/relatorios" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
-                  <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                </div>
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="relatorios">
+                <MainLayout>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
+                    <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/usuarios" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-6">Gestão de Usuários</h1>
-                  <UserManagement />
-                </div>
-              </MainLayout>
-            </ProtectedRoute>
+            <AuthWrapper>
+              <ProtectedRoute requireSuperAdmin>
+                <MainLayout>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-6">Gestão de Usuários</h1>
+                    <UserManagement />
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="/configuracoes" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <div className="p-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-6">Configurações</h1>
-                  <div className="grid gap-6">
-                    <CompanySettings />
-                    <SystemParameters />
-                    <IntegrationsSettings />
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <UserProfile />
-                      <ChangePasswordForm />
+            <AuthWrapper>
+              <ProtectedRoute requiredPermission="configuracoes">
+                <MainLayout>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-6">Configurações</h1>
+                    <div className="grid gap-6">
+                      <CompanySettings />
+                      <SystemParameters />
+                      <IntegrationsSettings />
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <UserProfile />
+                        <ChangePasswordForm />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </MainLayout>
-            </ProtectedRoute>
+                </MainLayout>
+              </ProtectedRoute>
+            </AuthWrapper>
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>

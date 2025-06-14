@@ -589,6 +589,15 @@ export type Database = {
         | "fornecedores"
         | "configuracoes"
         | "usuarios"
+      system_module:
+        | "produtos"
+        | "categorias"
+        | "fornecedores"
+        | "financeiro"
+        | "pdv"
+        | "relatorios"
+        | "usuarios"
+        | "configuracoes"
       transaction_type:
         | "entrada"
         | "saida"
@@ -726,6 +735,16 @@ export const Constants = {
         "fornecedores",
         "configuracoes",
         "usuarios",
+      ],
+      system_module: [
+        "produtos",
+        "categorias",
+        "fornecedores",
+        "financeiro",
+        "pdv",
+        "relatorios",
+        "usuarios",
+        "configuracoes",
       ],
       transaction_type: [
         "entrada",
