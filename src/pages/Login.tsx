@@ -35,26 +35,72 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Tentativa de login para:', email);
+      
+      // Limpar possíveis sessões anteriores
+      await supabase.auth.signOut();
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password.trim(),
       });
 
       if (error) {
+        console.error('❌ Erro no login:', error);
+        
+        let errorMessage = "Erro no login";
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
+        }
+        
         toast({
           title: "Erro no login",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-      } else if (data.user) {
+      } else if (data.user && data.session) {
+        console.log('✅ Login realizado com sucesso:', data.user.email);
+        
+        // Verificar se o usuário tem perfil
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.warn('⚠️ Perfil não encontrado, criando...');
+          
+          // Criar perfil se não existir
+          const { error: createProfileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              username: email.split('@')[0],
+              full_name: data.user.user_metadata?.full_name || '',
+              user_type: 'vendedor'
+            });
+
+          if (createProfileError) {
+            console.error('Erro ao criar perfil:', createProfileError);
+          }
+        }
+
         localStorage.setItem('isAuthenticated', 'true');
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema de Gestão.",
         });
+        
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('💥 Erro inesperado no login:', error);
       toast({
         title: "Erro no login",
         description: "Erro inesperado. Tente novamente.",

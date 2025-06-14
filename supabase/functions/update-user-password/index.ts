@@ -15,46 +15,70 @@ serve(async (req) => {
   try {
     const { user_id, new_password } = await req.json()
 
-    console.log('=== FUNÇÃO SIMPLIFICADA DE ATUALIZAÇÃO DE SENHA ===')
+    console.log('=== ATUALIZAÇÃO DE SENHA ===')
     console.log('User ID:', user_id)
     console.log('Nova senha fornecida:', !!new_password)
 
     if (!user_id || !new_password) {
       return new Response(
-        JSON.stringify({ error: 'Parâmetros obrigatórios ausentes' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Parâmetros obrigatórios ausentes',
+          success: false 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
     if (new_password.length < 6) {
       return new Response(
-        JSON.stringify({ error: 'Senha deve ter pelo menos 6 caracteres' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Senha deve ter pelo menos 6 caracteres',
+          success: false 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
-    // Criar cliente admin simples
+    // Criar cliente admin
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     )
 
-    console.log('Tentando atualizar senha...')
+    console.log('🔄 Atualizando senha via Admin API...')
 
-    // Atualização simples e direta
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+    // Atualizar senha usando Admin API
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
-      { password: new_password }
+      { 
+        password: new_password
+      }
     )
 
-    if (error) {
-      console.error('❌ Erro ao atualizar:', error.message)
+    if (updateError) {
+      console.error('❌ Erro na atualização:', updateError)
       return new Response(
         JSON.stringify({ 
-          error: `Falha na atualização: ${error.message}`,
-          details: error
+          error: `Falha na atualização: ${updateError.message}`,
+          success: false,
+          details: updateError
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
@@ -64,18 +88,25 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'Senha atualizada com sucesso',
-        user_id: data.user?.id
+        user_id: updateData.user?.id
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 Erro crítico:', error)
     return new Response(
       JSON.stringify({ 
-        error: `Erro interno: ${error.message}`
+        error: `Erro interno: ${error.message}`,
+        success: false
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
   }
 })

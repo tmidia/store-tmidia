@@ -66,6 +66,7 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
   const capitalizedName = capitalizeWords(sanitizedFullName);
   
+  // Atualizar perfil primeiro
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
@@ -78,7 +79,7 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
   if (updateError) throw updateError;
 
-  // Se uma nova senha foi fornecida, atualizá-la usando o método direto do Supabase
+  // Validar e atualizar senha se fornecida
   if (formData.password && formData.password.trim()) {
     const sanitizedPassword = sanitizeInput(formData.password);
     
@@ -87,19 +88,32 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(passwordValidation.message);
     }
 
-    console.log('🔐 Atualizando senha diretamente via Supabase Auth');
+    console.log('🔐 Atualizando senha do usuário:', user.id);
 
-    // Usar o método direto do Supabase para atualizar a senha
-    const { error: passwordError } = await supabase.auth.updateUser({
-      password: sanitizedPassword
+    // Usar a função edge para atualizar a senha de forma segura
+    const { data, error: passwordError } = await supabase.functions.invoke('update-user-password', {
+      body: {
+        user_id: user.id,
+        new_password: sanitizedPassword
+      }
     });
 
     if (passwordError) {
-      console.error('❌ Erro ao atualizar senha:', passwordError);
+      console.error('❌ Erro ao chamar função de atualização:', passwordError);
       throw new Error(`Erro ao atualizar senha: ${passwordError.message}`);
     }
 
-    console.log('✅ Senha atualizada com sucesso via Supabase Auth!');
+    if (data?.error) {
+      console.error('❌ Erro da função:', data.error);
+      throw new Error(`Erro ao atualizar senha: ${data.error}`);
+    }
+
+    if (!data?.success) {
+      console.error('❌ Falha na atualização:', data);
+      throw new Error('Falha na atualização da senha');
+    }
+
+    console.log('✅ Senha atualizada com sucesso!');
   }
 
   // Remover permissões existentes
