@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Power, PowerOff } from 'lucide-react';
+import { Edit, Power, PowerOff, UserX } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { UserWithPermissions } from '@/types/user';
 
@@ -14,6 +14,14 @@ interface UserTableProps {
 
 export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => {
   const isMobile = useIsMobile();
+
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  };
+
+  const getStatusText = (isActive: boolean) => {
+    return isActive ? "Ativo" : "Inativo";
+  };
 
   if (isMobile) {
     return (
@@ -33,6 +41,7 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                       size="sm"
                       onClick={() => onEdit(user)}
                       className="h-8 w-8 p-0"
+                      title="Editar usuário"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -41,11 +50,12 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                       size="sm"
                       onClick={() => onToggleStatus(user)}
                       className="h-8 w-8 p-0"
+                      title={user.is_active ? "Desativar usuário" : "Ativar usuário"}
                     >
                       {user.is_active ? (
-                        <PowerOff className="w-4 h-4" />
+                        <UserX className="w-4 h-4 text-red-500" />
                       ) : (
-                        <Power className="w-4 h-4" />
+                        <Power className="w-4 h-4 text-green-500" />
                       )}
                     </Button>
                   </div>
@@ -55,8 +65,8 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                   <Badge variant="outline" className="text-xs">
                     {user.user_type}
                   </Badge>
-                  <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
-                    {user.is_active ? "Ativo" : "Inativo"}
+                  <Badge className={`text-xs ${getStatusColor(user.is_active)}`}>
+                    {getStatusText(user.is_active)}
                   </Badge>
                 </div>
                 
@@ -98,8 +108,8 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                 </Badge>
               </td>
               <td className="p-4">
-                <Badge variant={user.is_active ? "default" : "secondary"}>
-                  {user.is_active ? "Ativo" : "Inativo"}
+                <Badge className={getStatusColor(user.is_active)}>
+                  {getStatusText(user.is_active)}
                 </Badge>
               </td>
               <td className="p-4">
@@ -114,6 +124,7 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(user)}
+                    title="Editar usuário"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -121,11 +132,12 @@ export const UserTable = ({ users, onEdit, onToggleStatus }: UserTableProps) => 
                     variant="ghost"
                     size="sm"
                     onClick={() => onToggleStatus(user)}
+                    title={user.is_active ? "Desativar usuário" : "Ativar usuário"}
                   >
                     {user.is_active ? (
-                      <PowerOff className="w-4 h-4" />
+                      <UserX className="w-4 h-4 text-red-500" />
                     ) : (
-                      <Power className="w-4 h-4" />
+                      <Power className="w-4 h-4 text-green-500" />
                     )}
                   </Button>
                 </div>

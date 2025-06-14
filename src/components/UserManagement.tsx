@@ -21,13 +21,23 @@ const UserManagement = () => {
     setIsSubmitting(true);
     try {
       await handleSubmit(editingUser, formData);
+      setEditingUser(null); // Limpar o usuário em edição após sucesso
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEdit = (user: UserWithPermissions) => {
+    console.log('Editando usuário:', user);
     setEditingUser(user);
+  };
+
+  const handleToggleStatus = async (user: UserWithPermissions) => {
+    try {
+      await toggleUserStatus(user);
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+    }
   };
 
   return (
@@ -57,7 +67,7 @@ const UserManagement = () => {
             <UserTable
               users={users}
               onEdit={handleEdit}
-              onToggleStatus={toggleUserStatus}
+              onToggleStatus={handleToggleStatus}
             />
           </div>
         </CardContent>

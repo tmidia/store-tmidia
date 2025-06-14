@@ -54,18 +54,20 @@ export const UserFormDialog = ({
     }
   };
 
-  const handleEdit = (user: UserWithPermissions) => {
-    onEditingUserChange(user);
-    setFormData({
-      username: user.username,
-      full_name: user.full_name || '',
-      email: '',
-      password: '',
-      user_type: user.user_type || 'vendedor',
-      permissions: user.permissions
-    });
-    setIsDialogOpen(true);
-  };
+  // Atualizar os dados do formulário quando editingUser mudar
+  React.useEffect(() => {
+    if (editingUser) {
+      setFormData({
+        username: editingUser.username,
+        full_name: editingUser.full_name || '',
+        email: '',
+        password: '',
+        user_type: editingUser.user_type || 'vendedor',
+        permissions: editingUser.permissions
+      });
+      setIsDialogOpen(true);
+    }
+  }, [editingUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +76,6 @@ export const UserFormDialog = ({
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      // O erro já foi tratado no hook, não fazer nada aqui
       console.error('Erro no formulário:', error);
     }
   };
