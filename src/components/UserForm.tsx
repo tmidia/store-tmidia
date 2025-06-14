@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
 import type { Database } from '@/integrations/supabase/types';
 import { MODULES } from '@/constants/modules';
+import { validateEmail, validatePassword, validateUsername, validateName, sanitizeHtml } from '@/utils/inputValidation';
 
 interface UserFormProps {
   editingUser: UserWithPermissions | null;
@@ -25,6 +26,53 @@ export const UserForm = ({
   isSubmitting,
   canCreateUser
 }: UserFormProps) => {
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const handleInputChange = (field: keyof UserFormData, value: string) => {
+    const sanitizedValue = sanitizeHtml(value);
+    onFormDataChange({ ...formData, [field]: sanitizedValue });
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!editingUser) {
+      if (!validateEmail(formData.email)) {
+        errors.email = 'Email inválido';
+      }
+      
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        errors.password = passwordValidation.message;
+      }
+    }
+
+    const usernameValidation = validateUsername(formData.username);
+    if (!usernameValidation.isValid) {
+      errors.username = usernameValidation.message;
+    }
+
+    const nameValidation = validateName(formData.full_name);
+    if (!nameValidation.isValid) {
+      errors.full_name = nameValidation.message;
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit(e);
+    }
+  };
+
   const handlePermissionChange = (module: string, checked: boolean) => {
     onFormDataChange({
       ...formData,
@@ -35,27 +83,35 @@ export const UserForm = ({
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="username" className="text-sm font-medium">Nome de Usuário</Label>
           <Input
             id="username"
             value={formData.username}
-            onChange={(e) => onFormDataChange({ ...formData, username: e.target.value })}
+            onChange={(e) => handleInputChange('username', e.target.value)}
             required
             className="w-full"
+            placeholder="Ex: joao_silva"
           />
+          {validationErrors.username && (
+            <p className="text-sm text-red-500">{validationErrors.username}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="full_name" className="text-sm font-medium">Nome Completo</Label>
           <Input
             id="full_name"
             value={formData.full_name}
-            onChange={(e) => onFormDataChange({ ...formData, full_name: e.target.value })}
+            onChange={(e) => handleInputChange('full_name', e.target.value)}
             required
             className="w-full"
+            placeholder="Ex: João Silva"
           />
+          {validationErrors.full_name && (
+            <p className="text-sm text-red-500">{validationErrors.full_name}</p>
+          )}
         </div>
       </div>
 
@@ -67,10 +123,14 @@ export const UserForm = ({
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => onFormDataChange({ ...formData, email: e.target.value })}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               required
               className="w-full"
+              placeholder="Ex: joao@empresa.com"
             />
+            {validationErrors.email && (
+              <p className="text-sm text-red-500">{validationErrors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
@@ -78,10 +138,18 @@ export const UserForm = ({
               id="password"
               type="password"
               value={formData.password}
-              onChange={(e) => onFormDataChange({ ...formData, password: e.target.value })}
+              onChange={(e) => handleInputChange('password', e.target.value)}
               required
               className="w-full"
+              placeholder="Mínimo 8 caracteres"
+              minLength={8}
             />
+            {validationErrors.password && (
+              <p className="text-sm text-red-500">{validationErrors.password}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              Deve conter ao menos 8 caracteres, uma maiúscula, uma minúscula e um número
+            </p>
           </div>
         </div>
       )}

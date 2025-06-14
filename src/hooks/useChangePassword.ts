@@ -6,30 +6,48 @@ import { toast } from '@/hooks/use-toast';
 export const useChangePassword = () => {
   const [isLoading, setIsLoading] = useState(false);
 
+  const validatePassword = (password: string) => {
+    if (password.length < 8) {
+      throw new Error('A senha deve ter pelo menos 8 caracteres');
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      throw new Error('A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número');
+    }
+  };
+
+  const sanitizeInput = (input: string) => {
+    return input.trim().replace(/[<>]/g, '');
+  };
+
   const changePassword = async (currentPassword: string, newPassword: string) => {
     setIsLoading(true);
     
     try {
-      // Verificar se a senha atual está correta
+      const sanitizedCurrentPassword = sanitizeInput(currentPassword);
+      const sanitizedNewPassword = sanitizeInput(newPassword);
+      
+      validatePassword(sanitizedNewPassword);
+
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user?.email) {
         throw new Error('Usuário não encontrado');
       }
 
-      // Tentar fazer login com a senha atual para verificar se está correta
+      // Verify current password by attempting to sign in
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
-        password: currentPassword,
+        password: sanitizedCurrentPassword,
       });
 
       if (signInError) {
         throw new Error('Senha atual incorreta');
       }
 
-      // Atualizar para a nova senha
+      // Update to new password using Supabase's secure method
       const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
+        password: sanitizedNewPassword
       });
 
       if (updateError) {
@@ -38,7 +56,7 @@ export const useChangePassword = () => {
 
       toast({
         title: "Senha alterada com sucesso!",
-        description: "Sua senha foi atualizada.",
+        description: "Sua senha foi atualizada com segurança.",
       });
 
       return { success: true };

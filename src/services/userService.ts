@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
 import { capitalizeWords } from '@/utils/userUtils';
+import { validateEmail, validatePassword, validateUsername, validateName, sanitizeInput } from '@/utils/inputValidation';
 
 export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
   const { data: profiles } = await supabase
@@ -30,17 +31,43 @@ export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
 };
 
 export const createUser = async (formData: UserFormData): Promise<void> => {
-  const capitalizedName = capitalizeWords(formData.full_name);
+  // Validate and sanitize inputs
+  const sanitizedEmail = sanitizeInput(formData.email);
+  const sanitizedUsername = sanitizeInput(formData.username);
+  const sanitizedFullName = sanitizeInput(formData.full_name);
+  const sanitizedPassword = sanitizeInput(formData.password);
+  
+  // Validate inputs
+  if (!validateEmail(sanitizedEmail)) {
+    throw new Error('Email inválido');
+  }
+  
+  const usernameValidation = validateUsername(sanitizedUsername);
+  if (!usernameValidation.isValid) {
+    throw new Error(usernameValidation.message);
+  }
+  
+  const nameValidation = validateName(sanitizedFullName);
+  if (!nameValidation.isValid) {
+    throw new Error(nameValidation.message);
+  }
+  
+  const passwordValidation = validatePassword(sanitizedPassword);
+  if (!passwordValidation.isValid) {
+    throw new Error(passwordValidation.message);
+  }
 
-  console.log('Iniciando criação de usuário:', { email: formData.email, username: formData.username });
+  const capitalizedName = capitalizeWords(sanitizedFullName);
+
+  console.log('Iniciando criação de usuário:', { email: sanitizedEmail, username: sanitizedUsername });
 
   // Usar signup normal do Supabase
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email: formData.email,
-    password: formData.password,
+    email: sanitizedEmail,
+    password: sanitizedPassword,
     options: {
       data: {
-        username: formData.username,
+        username: sanitizedUsername,
         full_name: capitalizedName,
         user_type: formData.user_type
       }
@@ -75,7 +102,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
         .from('profiles')
         .insert({
           id: signUpData.user.id,
-          username: formData.username,
+          username: sanitizedUsername,
           full_name: capitalizedName,
           user_type: formData.user_type,
           is_active: true
@@ -90,7 +117,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          username: formData.username,
+          username: sanitizedUsername,
           full_name: capitalizedName,
           user_type: formData.user_type,
           is_active: true
@@ -130,12 +157,26 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 };
 
 export const updateUser = async (user: UserWithPermissions, formData: UserFormData): Promise<void> => {
-  const capitalizedName = capitalizeWords(formData.full_name);
+  // Validate and sanitize inputs
+  const sanitizedUsername = sanitizeInput(formData.username);
+  const sanitizedFullName = sanitizeInput(formData.full_name);
+  
+  const usernameValidation = validateUsername(sanitizedUsername);
+  if (!usernameValidation.isValid) {
+    throw new Error(usernameValidation.message);
+  }
+  
+  const nameValidation = validateName(sanitizedFullName);
+  if (!nameValidation.isValid) {
+    throw new Error(nameValidation.message);
+  }
+
+  const capitalizedName = capitalizeWords(sanitizedFullName);
   
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
-      username: formData.username,
+      username: sanitizedUsername,
       full_name: capitalizedName,
       user_type: formData.user_type
     })

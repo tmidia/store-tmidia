@@ -4,58 +4,63 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminPasswordUpdate = () => {
-  const [email, setEmail] = useState('tmidiamkt@gmail.com');
-  const [newPassword, setNewPassword] = useState('Tmidia_202S');
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const validateInput = (email: string, password: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error('Email inválido');
+    }
+    if (password.length < 8) {
+      throw new Error('A senha deve ter pelo menos 8 caracteres');
+    }
+  };
+
+  const sanitizeInput = (input: string) => {
+    return input.trim().replace(/[<>]/g, '');
+  };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/update-user-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, newPassword }),
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedPassword = sanitizeInput(newPassword);
+      
+      validateInput(sanitizedEmail, sanitizedPassword);
+
+      // Use Supabase edge function for secure password updates
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: { email: sanitizedEmail, newPassword: sanitizedPassword }
       });
 
-      const result = await response.json();
+      if (error) throw error;
 
-      if (response.ok) {
-        toast({
-          title: "Senha atualizada com sucesso!",
-          description: `A senha do usuário ${email} foi alterada.`,
-        });
-        setEmail('');
-        setNewPassword('');
-      } else {
-        toast({
-          title: "Erro ao atualizar senha",
-          description: result.error || "Erro desconhecido",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
       toast({
-        title: "Erro",
-        description: "Erro inesperado. Tente novamente.",
+        title: "Senha atualizada com sucesso!",
+        description: `A senha do usuário ${sanitizedEmail} foi alterada.`,
+      });
+      
+      setEmail('');
+      setNewPassword('');
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar senha",
+        description: error.message || "Erro desconhecido",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Executar automaticamente quando o componente carrega
-  useState(() => {
-    handleUpdatePassword(new Event('submit') as any);
-  });
 
   return (
     <Card className="max-w-md">
@@ -65,7 +70,10 @@ const AdminPasswordUpdate = () => {
           <CardTitle>Atualização Administrativa</CardTitle>
         </div>
         <CardDescription>
-          Alteração de senha para usuário específico
+          <div className="flex items-center space-x-2 text-amber-600">
+            <AlertTriangle className="w-4 h-4" />
+            <span>Alteração de senha para usuário específico</span>
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -78,7 +86,7 @@ const AdminPasswordUpdate = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              readOnly
+              placeholder="usuario@email.com"
             />
           </div>
 
@@ -90,7 +98,8 @@ const AdminPasswordUpdate = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              readOnly
+              minLength={8}
+              placeholder="Mínimo 8 caracteres"
             />
           </div>
 
