@@ -20,6 +20,20 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     throw new Error(nameValidation.message);
   }
 
+  // Verificar se username já existe (exceto para o usuário atual)
+  if (sanitizedUsername !== user.username) {
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', sanitizedUsername)
+      .neq('id', user.id)
+      .single();
+
+    if (existingUser) {
+      throw new Error('Este nome de usuário já existe. Escolha outro.');
+    }
+  }
+
   // Validar CPF se fornecido
   if (sanitizedCPF) {
     const cpfValidation = validateCPF(sanitizedCPF);
