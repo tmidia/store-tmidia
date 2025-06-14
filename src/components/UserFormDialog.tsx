@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -56,13 +57,16 @@ export const UserFormDialog = ({
   // Atualizar os dados do formulário quando editingUser mudar
   React.useEffect(() => {
     if (editingUser) {
+      console.log('Carregando dados do usuário para edição:', editingUser);
+      console.log('Permissões do usuário:', editingUser.permissions);
+      
       setFormData({
         username: editingUser.username,
         full_name: editingUser.full_name || '',
         email: '',
         password: '',
         user_type: editingUser.user_type || 'vendedor',
-        permissions: editingUser.permissions
+        permissions: editingUser.permissions || []
       });
       setIsDialogOpen(true);
     }
@@ -71,6 +75,7 @@ export const UserFormDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Submetendo formulário com dados:', formData);
       await onSubmit(editingUser, formData);
       setIsDialogOpen(false);
       resetForm();
