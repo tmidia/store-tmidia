@@ -31,6 +31,7 @@ serve(async (req) => {
 
     // Validar se o user_id foi fornecido
     if (!user_id) {
+      console.error('User ID não fornecido')
       return new Response(
         JSON.stringify({ error: 'User ID is required' }),
         { 
@@ -40,9 +41,10 @@ serve(async (req) => {
       )
     }
 
-    if (!new_password || new_password.length < 8) {
+    if (!new_password || new_password.length < 6) {
+      console.error('Senha inválida:', new_password?.length || 0, 'caracteres')
       return new Response(
-        JSON.stringify({ error: 'Password must be at least 8 characters long' }),
+        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -50,16 +52,21 @@ serve(async (req) => {
       )
     }
 
-    // Update user password directly by user ID
+    console.log('Tentando atualizar senha via Admin API para usuário:', user_id)
+
+    // Update user password directly by user ID using admin API
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
-      { password: new_password }
+      { 
+        password: new_password,
+        email_confirm: true // Força confirmação do email para evitar problemas
+      }
     )
 
     if (error) {
-      console.error('Erro ao atualizar senha:', error)
+      console.error('Erro ao atualizar senha via Admin API:', error)
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: `Failed to update password: ${error.message}` }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -68,11 +75,13 @@ serve(async (req) => {
     }
 
     console.log('Senha atualizada com sucesso para usuário:', user_id)
+    console.log('Dados do usuário após atualização:', data.user?.email)
 
     return new Response(
       JSON.stringify({ 
         message: 'Password updated successfully',
-        user: data.user 
+        user_id: data.user?.id,
+        email: data.user?.email
       }),
       { 
         status: 200, 
@@ -81,9 +90,9 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro na função edge:', error)
+    console.error('Erro na função edge update-user-password:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: `Internal server error: ${error.message}` }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

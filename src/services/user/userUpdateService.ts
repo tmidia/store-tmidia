@@ -88,21 +88,29 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     }
 
     console.log('Tentando atualizar senha para usuário:', user.id);
+    console.log('Email do usuário:', user.email);
 
-    // Usar a função edge para atualizar a senha
-    const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
-      body: {
-        user_id: user.id,
-        new_password: sanitizedPassword
+    try {
+      // Usar a função edge para atualizar a senha
+      const { data, error: passwordError } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          user_id: user.id,
+          new_password: sanitizedPassword
+        }
+      });
+
+      if (passwordError) {
+        console.error('Erro ao atualizar senha:', passwordError);
+        throw new Error('Erro ao atualizar senha do usuário: ' + passwordError.message);
       }
-    });
 
-    if (passwordError) {
-      console.error('Erro ao atualizar senha:', passwordError);
-      throw new Error('Erro ao atualizar senha do usuário: ' + passwordError.message);
+      console.log('Resposta da função edge:', data);
+      console.log('Senha atualizada com sucesso para usuário:', user.id);
+      
+    } catch (functionError) {
+      console.error('Erro ao chamar função de atualização de senha:', functionError);
+      throw new Error('Falha ao atualizar senha. Tente novamente.');
     }
-
-    console.log('Senha atualizada com sucesso');
   }
 
   // Remover permissões existentes
