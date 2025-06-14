@@ -20,14 +20,18 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     throw new Error(nameValidation.message);
   }
 
-  // Verificar se username já existe (exceto para o usuário atual)
+  // Verificar se username já existe APENAS se foi alterado
   if (sanitizedUsername !== user.username) {
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: usernameCheckError } = await supabase
       .from('profiles')
       .select('id')
       .eq('username', sanitizedUsername)
       .neq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (usernameCheckError) {
+      console.error('Erro ao verificar username:', usernameCheckError);
+    }
 
     if (existingUser) {
       throw new Error('Este nome de usuário já existe. Escolha outro.');
@@ -41,16 +45,22 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(cpfValidation.message);
     }
 
-    // Verificar se CPF já existe (exceto para o usuário atual)
-    const { data: existingCPF } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('cpf', sanitizedCPF)
-      .neq('id', user.id)
-      .single();
+    // Verificar se CPF já existe APENAS se foi alterado ou se não existia antes
+    if (sanitizedCPF !== user.cpf) {
+      const { data: existingCPF, error: cpfCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('cpf', sanitizedCPF)
+        .neq('id', user.id)
+        .maybeSingle();
 
-    if (existingCPF) {
-      throw new Error('CPF já cadastrado para outro usuário');
+      if (cpfCheckError) {
+        console.error('Erro ao verificar CPF:', cpfCheckError);
+      }
+
+      if (existingCPF) {
+        throw new Error('CPF já cadastrado para outro usuário');
+      }
     }
   }
 
