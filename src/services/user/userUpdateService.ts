@@ -78,7 +78,7 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
   if (updateError) throw updateError;
 
-  // Se uma nova senha foi fornecida, atualizá-la
+  // Se uma nova senha foi fornecida, atualizá-la usando o método direto do Supabase
   if (formData.password && formData.password.trim()) {
     const sanitizedPassword = sanitizeInput(formData.password);
     
@@ -87,40 +87,19 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(passwordValidation.message);
     }
 
-    console.log('🔐 Iniciando atualização de senha simplificada');
-    console.log('👤 Usuário ID:', user.id);
+    console.log('🔐 Atualizando senha diretamente via Supabase Auth');
 
-    try {
-      const { data: response, error: functionError } = await supabase.functions.invoke('update-user-password', {
-        body: {
-          user_id: user.id,
-          new_password: sanitizedPassword
-        }
-      });
+    // Usar o método direto do Supabase para atualizar a senha
+    const { error: passwordError } = await supabase.auth.updateUser({
+      password: sanitizedPassword
+    });
 
-      console.log('📨 Resposta da função:', response);
-
-      if (functionError) {
-        console.error('❌ Erro da função:', functionError);
-        throw new Error(`Erro ao atualizar senha: ${functionError.message}`);
-      }
-
-      if (response?.error) {
-        console.error('❌ Erro na resposta:', response.error);
-        throw new Error(`Erro ao atualizar senha: ${response.error}`);
-      }
-
-      if (!response?.success) {
-        console.error('❌ Resposta inválida:', response);
-        throw new Error('Falha na atualização da senha');
-      }
-
-      console.log('✅ Senha atualizada com sucesso!');
-      
-    } catch (error: any) {
-      console.error('💥 Erro ao atualizar senha:', error);
-      throw new Error(`Falha ao atualizar senha: ${error.message}`);
+    if (passwordError) {
+      console.error('❌ Erro ao atualizar senha:', passwordError);
+      throw new Error(`Erro ao atualizar senha: ${passwordError.message}`);
     }
+
+    console.log('✅ Senha atualizada com sucesso via Supabase Auth!');
   }
 
   // Remover permissões existentes
