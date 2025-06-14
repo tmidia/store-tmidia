@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
-import { validateEmail, validatePassword, validateUsername, validateName, sanitizeHtml } from '@/utils/inputValidation';
+import { validateEmail, validatePassword, validateUsername, validateName, validateCPF, sanitizeHtml } from '@/utils/inputValidation';
 import { UserBasicInfo } from '@/components/UserBasicInfo';
 import { UserEmailPassword } from '@/components/UserEmailPassword';
 import { UserPasswordChange } from '@/components/UserPasswordChange';
@@ -73,6 +73,14 @@ export const UserForm = ({
     const nameValidation = validateName(formData.full_name);
     if (!nameValidation.isValid) {
       errors.full_name = nameValidation.message;
+    }
+
+    // Validação do CPF
+    if (formData.cpf) {
+      const cpfValidation = validateCPF(formData.cpf);
+      if (!cpfValidation.isValid) {
+        errors.cpf = cpfValidation.message;
+      }
     }
 
     setValidationErrors(errors);

@@ -2,12 +2,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
 import { capitalizeWords } from '@/utils/userUtils';
-import { validatePassword, validateUsername, validateName, sanitizeInput } from '@/utils/inputValidation';
+import { validatePassword, validateUsername, validateName, validateCPF, sanitizeInput } from '@/utils/inputValidation';
 
 export const updateUser = async (user: UserWithPermissions, formData: UserFormData): Promise<void> => {
   // Validate and sanitize inputs
   const sanitizedUsername = sanitizeInput(formData.username);
   const sanitizedFullName = sanitizeInput(formData.full_name);
+  const sanitizedCPF = sanitizeInput(formData.cpf);
   
   const usernameValidation = validateUsername(sanitizedUsername);
   if (!usernameValidation.isValid) {
@@ -19,6 +20,26 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     throw new Error(nameValidation.message);
   }
 
+  // Validar CPF se fornecido
+  if (sanitizedCPF) {
+    const cpfValidation = validateCPF(sanitizedCPF);
+    if (!cpfValidation.isValid) {
+      throw new Error(cpfValidation.message);
+    }
+
+    // Verificar se CPF já existe (exceto para o usuário atual)
+    const { data: existingCPF } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('cpf', sanitizedCPF)
+      .neq('id', user.id)
+      .single();
+
+    if (existingCPF) {
+      throw new Error('CPF já cadastrado para outro usuário');
+    }
+  }
+
   const capitalizedName = capitalizeWords(sanitizedFullName);
   
   const { error: updateError } = await supabase
@@ -26,6 +47,7 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     .update({
       username: sanitizedUsername,
       full_name: capitalizedName,
+      cpf: sanitizedCPF,
       user_type: formData.user_type
     })
     .eq('id', user.id);

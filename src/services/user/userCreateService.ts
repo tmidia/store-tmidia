@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { UserFormData } from '@/types/user';
 import { capitalizeWords } from '@/utils/userUtils';
-import { validateEmail, validatePassword, validateUsername, validateName, sanitizeInput } from '@/utils/inputValidation';
+import { validateEmail, validatePassword, validateUsername, validateName, validateCPF, sanitizeInput } from '@/utils/inputValidation';
 
 export const createUser = async (formData: UserFormData): Promise<void> => {
   // Validate and sanitize inputs
@@ -10,6 +10,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
   const sanitizedUsername = sanitizeInput(formData.username);
   const sanitizedFullName = sanitizeInput(formData.full_name);
   const sanitizedPassword = sanitizeInput(formData.password);
+  const sanitizedCPF = sanitizeInput(formData.cpf);
   
   // Validate inputs
   if (!validateEmail(sanitizedEmail)) {
@@ -31,6 +32,25 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
     throw new Error(passwordValidation.message);
   }
 
+  // Validar CPF se fornecido
+  if (sanitizedCPF) {
+    const cpfValidation = validateCPF(sanitizedCPF);
+    if (!cpfValidation.isValid) {
+      throw new Error(cpfValidation.message);
+    }
+
+    // Verificar se CPF já existe
+    const { data: existingCPF } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('cpf', sanitizedCPF)
+      .single();
+
+    if (existingCPF) {
+      throw new Error('CPF já cadastrado no sistema');
+    }
+  }
+
   const capitalizedName = capitalizeWords(sanitizedFullName);
 
   console.log('Iniciando criação de usuário:', { email: sanitizedEmail, username: sanitizedUsername });
@@ -43,7 +63,8 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
       data: {
         username: sanitizedUsername,
         full_name: capitalizedName,
-        user_type: formData.user_type
+        user_type: formData.user_type,
+        cpf: sanitizedCPF
       }
     }
   });
@@ -79,6 +100,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
           username: sanitizedUsername,
           full_name: capitalizedName,
           user_type: formData.user_type,
+          cpf: sanitizedCPF,
           is_active: true
         });
 
@@ -94,6 +116,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
           username: sanitizedUsername,
           full_name: capitalizedName,
           user_type: formData.user_type,
+          cpf: sanitizedCPF,
           is_active: true
         })
         .eq('id', signUpData.user.id);

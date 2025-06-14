@@ -31,6 +31,7 @@ export const UserFormDialog = ({
     full_name: '',
     email: '',
     password: '',
+    cpf: '',
     user_type: 'vendedor' as Database['public']['Enums']['user_type'],
     permissions: []
   });
@@ -41,6 +42,7 @@ export const UserFormDialog = ({
       full_name: '',
       email: '',
       password: '',
+      cpf: '',
       user_type: 'vendedor',
       permissions: []
     });
@@ -63,8 +65,9 @@ export const UserFormDialog = ({
       setFormData({
         username: editingUser.username,
         full_name: editingUser.full_name || '',
-        email: editingUser.email || '', // Usar o email do usuário com fallback
+        email: editingUser.email || '',
         password: '',
+        cpf: editingUser.cpf || '',
         user_type: editingUser.user_type || 'vendedor',
         permissions: Array.isArray(editingUser.permissions) ? editingUser.permissions : []
       });

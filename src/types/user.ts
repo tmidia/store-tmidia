@@ -14,6 +14,7 @@ export interface UserFormData {
   full_name: string;
   email: string;
   password: string;
+  cpf: string;
   user_type: Database['public']['Enums']['user_type'];
   permissions: string[];
 }
