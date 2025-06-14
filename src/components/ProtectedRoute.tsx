@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Shield, AlertTriangle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserType = Database['public']['Enums']['user_type'];
-type ModuleName = Database['public']['Enums']['module_name'];
+type ModuleName = Database['public']['Enums']['module_permission'];
 
 interface ProtectedRouteProps {
   children: ReactNode;

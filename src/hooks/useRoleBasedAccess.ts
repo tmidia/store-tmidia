@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserType = Database['public']['Enums']['user_type'];
-type ModuleName = Database['public']['Enums']['module_name'];
+type ModuleName = Database['public']['Enums']['module_permission'];
 
 interface UserProfile {
   id: string;
