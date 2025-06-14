@@ -5,6 +5,7 @@ import { capitalizeWords } from '@/utils/userUtils';
 import { validateEmail, validatePassword, validateUsername, validateName, sanitizeInput } from '@/utils/inputValidation';
 
 export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
+  // Buscar perfis dos usuários
   const { data: profiles } = await supabase
     .from('profiles')
     .select('*')
@@ -13,13 +14,18 @@ export const fetchUsers = async (): Promise<UserWithPermissions[]> => {
   if (profiles) {
     const usersWithPermissions = await Promise.all(
       profiles.map(async (profile) => {
+        // Buscar permissões do usuário
         const { data: permissions } = await supabase
           .from('user_permissions')
           .select('module')
           .eq('user_id', profile.id);
 
+        // Buscar email do usuário na tabela auth.users através de uma função
+        const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+        
         return {
           ...profile,
+          email: userData.user?.email || '',
           permissions: permissions?.map(p => p.module) || []
         };
       })
@@ -193,6 +199,8 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
       throw new Error(passwordValidation.message);
     }
 
+    console.log('Tentando atualizar senha para usuário:', user.id);
+
     // Usar a função edge para atualizar a senha
     const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
       body: {
@@ -203,8 +211,10 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
     if (passwordError) {
       console.error('Erro ao atualizar senha:', passwordError);
-      throw new Error('Erro ao atualizar senha do usuário');
+      throw new Error('Erro ao atualizar senha do usuário: ' + passwordError.message);
     }
+
+    console.log('Senha atualizada com sucesso');
   }
 
   // Remover permissões existentes
@@ -226,6 +236,8 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
     if (permissionsError) {
       console.error('Erro ao atualizar permissões:', permissionsError);
+    } else {
+      console.log('Permissões atualizadas com sucesso');
     }
   }
 };

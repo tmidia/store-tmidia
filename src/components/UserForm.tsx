@@ -83,9 +83,18 @@ export const UserForm = ({
     e.preventDefault();
     if (validateForm()) {
       // Se estiver alterando senha, incluir a nova senha nos dados do formulário
+      const submitFormData = { ...formData };
       if (editingUser && newPassword) {
-        onFormDataChange({ ...formData, password: newPassword });
+        submitFormData.password = newPassword;
       }
+      
+      console.log('Dados do formulário para submissão:', submitFormData);
+      
+      // Atualizar os dados do formulário com a nova senha se necessário
+      if (editingUser && newPassword) {
+        onFormDataChange(submitFormData);
+      }
+      
       onSubmit(e);
     }
   };
@@ -103,17 +112,26 @@ export const UserForm = ({
           formData={formData}
           validationErrors={validationErrors}
           onInputChange={handleInputChange}
+          isEditMode={false}
         />
       )}
 
       {editingUser && (
-        <UserPasswordChange
-          validationErrors={validationErrors}
-          newPassword={newPassword}
-          confirmPassword={confirmPassword}
-          onNewPasswordChange={setNewPassword}
-          onConfirmPasswordChange={setConfirmPassword}
-        />
+        <>
+          <UserEmailPassword
+            formData={formData}
+            validationErrors={validationErrors}
+            onInputChange={handleInputChange}
+            isEditMode={true}
+          />
+          <UserPasswordChange
+            validationErrors={validationErrors}
+            newPassword={newPassword}
+            confirmPassword={confirmPassword}
+            onNewPasswordChange={setNewPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+          />
+        </>
       )}
 
       <UserTypeSelect

@@ -13,7 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { email, newPassword } = await req.json()
+    const { user_id, new_password } = await req.json()
+
+    console.log('Atualizando senha para usuário:', user_id)
 
     // Create admin client
     const supabaseAdmin = createClient(
@@ -27,12 +29,10 @@ serve(async (req) => {
       }
     )
 
-    // Get user by email
-    const { data: users, error: getUserError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (getUserError) {
+    // Validar se o user_id foi fornecido
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ error: getUserError.message }),
+        JSON.stringify({ error: 'User ID is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -40,25 +40,24 @@ serve(async (req) => {
       )
     }
 
-    const user = users.users.find(u => u.email === email)
-    
-    if (!user) {
+    if (!new_password || new_password.length < 8) {
       return new Response(
-        JSON.stringify({ error: 'User not found' }),
+        JSON.stringify({ error: 'Password must be at least 8 characters long' }),
         { 
-          status: 404, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    // Update user password
+    // Update user password directly by user ID
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
-      { password: newPassword }
+      user_id,
+      { password: new_password }
     )
 
     if (error) {
+      console.error('Erro ao atualizar senha:', error)
       return new Response(
         JSON.stringify({ error: error.message }),
         { 
@@ -67,6 +66,8 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('Senha atualizada com sucesso para usuário:', user_id)
 
     return new Response(
       JSON.stringify({ 
@@ -80,6 +81,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Erro na função edge:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

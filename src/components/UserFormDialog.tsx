@@ -63,10 +63,10 @@ export const UserFormDialog = ({
       setFormData({
         username: editingUser.username,
         full_name: editingUser.full_name || '',
-        email: '',
+        email: editingUser.email || '', // Incluir o email do usuário
         password: '',
         user_type: editingUser.user_type || 'vendedor',
-        permissions: editingUser.permissions || []
+        permissions: Array.isArray(editingUser.permissions) ? editingUser.permissions : []
       });
       setIsDialogOpen(true);
     }
