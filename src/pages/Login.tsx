@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +54,8 @@ const Login = () => {
           errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
         } else if (error.message.includes('Too many requests')) {
           errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
+        } else if (error.message.includes('Database error')) {
+          errorMessage = "Erro temporário do sistema. Tente novamente em alguns instantes.";
         }
         
         toast({
