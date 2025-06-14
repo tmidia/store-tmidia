@@ -15,7 +15,10 @@ serve(async (req) => {
   try {
     const { user_id, new_password } = await req.json()
 
-    console.log('Atualizando senha para usuário:', user_id)
+    console.log('=== INÍCIO DA ATUALIZAÇÃO DE SENHA ===')
+    console.log('User ID:', user_id)
+    console.log('Senha fornecida:', new_password ? 'SIM' : 'NÃO')
+    console.log('Tamanho da senha:', new_password?.length || 0)
 
     // Create admin client
     const supabaseAdmin = createClient(
@@ -29,9 +32,9 @@ serve(async (req) => {
       }
     )
 
-    // Validar se o user_id foi fornecido
+    // Validações básicas
     if (!user_id) {
-      console.error('User ID não fornecido')
+      console.error('❌ User ID não fornecido')
       return new Response(
         JSON.stringify({ error: 'User ID is required' }),
         { 
@@ -42,7 +45,7 @@ serve(async (req) => {
     }
 
     if (!new_password || new_password.length < 6) {
-      console.error('Senha inválida:', new_password?.length || 0, 'caracteres')
+      console.error('❌ Senha inválida - tamanho:', new_password?.length || 0)
       return new Response(
         JSON.stringify({ error: 'Password must be at least 6 characters long' }),
         { 
@@ -52,12 +55,23 @@ serve(async (req) => {
       )
     }
 
-    // Primeiro, verificar se o usuário existe
-    console.log('Verificando se usuário existe:', user_id)
+    // Verificar se o usuário existe
+    console.log('🔍 Verificando se usuário existe...')
     const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(user_id)
     
-    if (getUserError || !existingUser.user) {
-      console.error('Usuário não encontrado:', getUserError)
+    if (getUserError) {
+      console.error('❌ Erro ao buscar usuário:', getUserError)
+      return new Response(
+        JSON.stringify({ error: `User lookup failed: ${getUserError.message}` }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!existingUser.user) {
+      console.error('❌ Usuário não encontrado')
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         { 
@@ -67,21 +81,40 @@ serve(async (req) => {
       )
     }
 
-    console.log('Usuário encontrado:', existingUser.user.email)
-    console.log('Tentando atualizar senha via Admin API para usuário:', user_id)
+    console.log('✅ Usuário encontrado:', existingUser.user.email)
+    console.log('📧 Email do usuário:', existingUser.user.email)
+    console.log('🆔 ID do usuário:', existingUser.user.id)
 
-    // Update user password directly by user ID using admin API
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+    // Primeiro, invalidar todas as sessões do usuário
+    console.log('🔄 Invalidando sessões existentes...')
+    try {
+      await supabaseAdmin.auth.admin.signOut(user_id, 'global')
+      console.log('✅ Sessões invalidadas com sucesso')
+    } catch (signOutError) {
+      console.log('⚠️ Aviso: Não foi possível invalidar sessões:', signOutError)
+      // Continuar mesmo se não conseguir invalidar sessões
+    }
+
+    // Aguardar um pouco para garantir que as sessões foram invalidadas
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Atualizar a senha
+    console.log('🔐 Atualizando senha...')
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
       { 
         password: new_password
       }
     )
 
-    if (error) {
-      console.error('Erro ao atualizar senha via Admin API:', error)
+    if (updateError) {
+      console.error('❌ Erro ao atualizar senha:', updateError)
+      console.error('Detalhes do erro:', JSON.stringify(updateError, null, 2))
       return new Response(
-        JSON.stringify({ error: `Failed to update password: ${error.message}` }),
+        JSON.stringify({ 
+          error: `Failed to update password: ${updateError.message}`,
+          details: updateError
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -89,14 +122,28 @@ serve(async (req) => {
       )
     }
 
-    console.log('Senha atualizada com sucesso para usuário:', user_id)
-    console.log('Dados do usuário após atualização:', data.user?.email)
+    console.log('✅ Senha atualizada com sucesso!')
+    console.log('📊 Dados retornados:', updateData?.user?.email)
+
+    // Verificar se realmente foi atualizado
+    console.log('🔍 Verificando atualização...')
+    const { data: verifyUser, error: verifyError } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    
+    if (verifyError) {
+      console.error('⚠️ Erro ao verificar atualização:', verifyError)
+    } else {
+      console.log('✅ Verificação bem-sucedida:', verifyUser?.user?.email)
+      console.log('📅 Última atualização:', verifyUser?.user?.updated_at)
+    }
+
+    console.log('=== FIM DA ATUALIZAÇÃO DE SENHA ===')
 
     return new Response(
       JSON.stringify({ 
         message: 'Password updated successfully',
-        user_id: data.user?.id,
-        email: data.user?.email
+        user_id: updateData?.user?.id,
+        email: updateData?.user?.email,
+        updated_at: updateData?.user?.updated_at
       }),
       { 
         status: 200, 
@@ -105,9 +152,13 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro na função edge update-user-password:', error)
+    console.error('💥 ERRO CRÍTICO na função edge:', error)
+    console.error('Stack trace:', error.stack)
     return new Response(
-      JSON.stringify({ error: `Internal server error: ${error.message}` }),
+      JSON.stringify({ 
+        error: `Internal server error: ${error.message}`,
+        stack: error.stack
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
