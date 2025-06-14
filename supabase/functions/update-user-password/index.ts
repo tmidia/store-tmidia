@@ -52,14 +52,29 @@ serve(async (req) => {
       )
     }
 
+    // Primeiro, verificar se o usuário existe
+    console.log('Verificando se usuário existe:', user_id)
+    const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    
+    if (getUserError || !existingUser.user) {
+      console.error('Usuário não encontrado:', getUserError)
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Usuário encontrado:', existingUser.user.email)
     console.log('Tentando atualizar senha via Admin API para usuário:', user_id)
 
     // Update user password directly by user ID using admin API
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       user_id,
       { 
-        password: new_password,
-        email_confirm: true // Força confirmação do email para evitar problemas
+        password: new_password
       }
     )
 
