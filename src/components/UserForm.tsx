@@ -1,14 +1,12 @@
+
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import { Eye, EyeOff } from 'lucide-react';
 import type { UserWithPermissions, UserFormData } from '@/types/user';
-import type { Database } from '@/integrations/supabase/types';
-import { MODULES } from '@/constants/modules';
 import { validateEmail, validatePassword, validateUsername, validateName, sanitizeHtml } from '@/utils/inputValidation';
+import { UserBasicInfo } from '@/components/UserBasicInfo';
+import { UserEmailPassword } from '@/components/UserEmailPassword';
+import { UserPasswordChange } from '@/components/UserPasswordChange';
+import { UserTypeSelect } from '@/components/UserTypeSelect';
+import { UserPermissions } from '@/components/UserPermissions';
 
 interface UserFormProps {
   editingUser: UserWithPermissions | null;
@@ -28,9 +26,6 @@ export const UserForm = ({
   canCreateUser
 }: UserFormProps) => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -59,7 +54,7 @@ export const UserForm = ({
     }
 
     // Validação para alteração de senha no modo de edição
-    if (editingUser && showChangePassword) {
+    if (editingUser && newPassword) {
       const passwordValidation = validatePassword(newPassword);
       if (!passwordValidation.isValid) {
         errors.newPassword = passwordValidation.message;
@@ -88,229 +83,48 @@ export const UserForm = ({
     e.preventDefault();
     if (validateForm()) {
       // Se estiver alterando senha, incluir a nova senha nos dados do formulário
-      if (editingUser && showChangePassword && newPassword) {
+      if (editingUser && newPassword) {
         onFormDataChange({ ...formData, password: newPassword });
       }
       onSubmit(e);
     }
   };
 
-  const handlePermissionChange = (module: string, checked: boolean) => {
-    console.log('Alterando permissão:', module, 'para:', checked);
-    console.log('Permissões atuais:', formData.permissions);
-    
-    const updatedPermissions = checked 
-      ? [...formData.permissions, module]
-      : formData.permissions.filter(p => p !== module);
-    
-    console.log('Novas permissões:', updatedPermissions);
-    
-    onFormDataChange({
-      ...formData,
-      permissions: updatedPermissions
-    });
-  };
-
-  const isPermissionChecked = (module: string): boolean => {
-    const isChecked = formData.permissions.includes(module);
-    console.log(`Verificando permissão ${module}:`, isChecked, 'em:', formData.permissions);
-    return isChecked;
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-medium">Nome de Usuário</Label>
-          <Input
-            id="username"
-            value={formData.username}
-            onChange={(e) => handleInputChange('username', e.target.value)}
-            required
-            className="w-full"
-            placeholder="Ex: joao_silva"
-          />
-          {validationErrors.username && (
-            <p className="text-sm text-red-500">{validationErrors.username}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="full_name" className="text-sm font-medium">Nome Completo</Label>
-          <Input
-            id="full_name"
-            value={formData.full_name}
-            onChange={(e) => handleInputChange('full_name', e.target.value)}
-            required
-            className="w-full"
-            placeholder="Ex: João Silva"
-          />
-          {validationErrors.full_name && (
-            <p className="text-sm text-red-500">{validationErrors.full_name}</p>
-          )}
-        </div>
-      </div>
+      <UserBasicInfo
+        formData={formData}
+        validationErrors={validationErrors}
+        onInputChange={handleInputChange}
+      />
 
       {!editingUser && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              required
-              className="w-full"
-              placeholder="Ex: joao@empresa.com"
-            />
-            {validationErrors.email && (
-              <p className="text-sm text-red-500">{validationErrors.email}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              required
-              className="w-full"
-              placeholder="Mínimo 8 caracteres"
-              minLength={8}
-            />
-            {validationErrors.password && (
-              <p className="text-sm text-red-500">{validationErrors.password}</p>
-            )}
-            <p className="text-xs text-gray-500">
-              Deve conter ao menos 8 caracteres, uma maiúscula, uma minúscula e um número
-            </p>
-          </div>
-        </div>
+        <UserEmailPassword
+          formData={formData}
+          validationErrors={validationErrors}
+          onInputChange={handleInputChange}
+        />
       )}
 
       {editingUser && (
-        <div className="space-y-4 border-t pt-4">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Alterar Senha</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowChangePassword(!showChangePassword)}
-            >
-              {showChangePassword ? 'Cancelar' : 'Alterar Senha'}
-            </Button>
-          </div>
-          
-          {showChangePassword && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword" className="text-sm font-medium">Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full pr-10"
-                    placeholder="Nova senha"
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {validationErrors.newPassword && (
-                  <p className="text-sm text-red-500">{validationErrors.newPassword}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pr-10"
-                    placeholder="Confirmar nova senha"
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {validationErrors.confirmPassword && (
-                  <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
-                )}
-              </div>
-              <div className="col-span-full">
-                <p className="text-xs text-gray-500">
-                  Deve conter ao menos 8 caracteres, uma maiúscula, uma minúscula e um número
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <UserPasswordChange
+          validationErrors={validationErrors}
+          newPassword={newPassword}
+          confirmPassword={confirmPassword}
+          onNewPasswordChange={setNewPassword}
+          onConfirmPasswordChange={setConfirmPassword}
+        />
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="user_type" className="text-sm font-medium">Tipo de Usuário</Label>
-        <Select 
-          value={formData.user_type} 
-          onValueChange={(value: Database['public']['Enums']['user_type']) => 
-            onFormDataChange({ ...formData, user_type: value })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="superadmin">Superadmin</SelectItem>
-            <SelectItem value="gerente">Gerente</SelectItem>
-            <SelectItem value="vendedor">Vendedor</SelectItem>
-            <SelectItem value="estoquista">Estoquista</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <UserTypeSelect
+        formData={formData}
+        onFormDataChange={onFormDataChange}
+      />
 
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Permissões de Módulos</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {MODULES.map(module => {
-            const checked = isPermissionChecked(module);
-            return (
-              <div key={module} className="flex items-center space-x-2 p-2 border rounded">
-                <Checkbox
-                  id={module}
-                  checked={checked}
-                  onCheckedChange={(checked) => handlePermissionChange(module, checked as boolean)}
-                />
-                <Label htmlFor={module} className="capitalize text-sm cursor-pointer flex-1">
-                  {module}
-                </Label>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <UserPermissions
+        formData={formData}
+        onFormDataChange={onFormDataChange}
+      />
     </form>
   );
 };
