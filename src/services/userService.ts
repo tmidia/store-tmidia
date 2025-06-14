@@ -184,6 +184,29 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
 
   if (updateError) throw updateError;
 
+  // Se uma nova senha foi fornecida, atualizá-la
+  if (formData.password && formData.password.trim()) {
+    const sanitizedPassword = sanitizeInput(formData.password);
+    
+    const passwordValidation = validatePassword(sanitizedPassword);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message);
+    }
+
+    // Usar a função edge para atualizar a senha
+    const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
+      body: {
+        user_id: user.id,
+        new_password: sanitizedPassword
+      }
+    });
+
+    if (passwordError) {
+      console.error('Erro ao atualizar senha:', passwordError);
+      throw new Error('Erro ao atualizar senha do usuário');
+    }
+  }
+
   // Remover permissões existentes
   await supabase
     .from('user_permissions')
