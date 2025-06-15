@@ -1,14 +1,12 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Package, 
-  TrendingUp, 
   AlertTriangle, 
-  DollarSign,
-  ShoppingCart,
+  BarChart3,
   Users,
-  BarChart3
+  ShoppingCart
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,77 +18,52 @@ const Dashboard = () => {
     totalSuppliers: 0
   });
   const [loading, setLoading] = useState(true);
-  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (!hasLoadedRef.current) {
-      fetchStats();
-    }
+    let mounted = true;
+
+    const fetchStats = async () => {
+      try {
+        console.log('📊 Carregando estatísticas...');
+        
+        const [
+          { count: productsCount },
+          { data: lowStockData },
+          { count: categoriesCount },
+          { count: suppliersCount }
+        ] = await Promise.all([
+          supabase.from('products').select('*', { count: 'exact', head: true }),
+          supabase.from('products').select('stock_quantity, minimum_stock').lte('stock_quantity', 'minimum_stock'),
+          supabase.from('categories').select('*', { count: 'exact', head: true }),
+          supabase.from('suppliers').select('*', { count: 'exact', head: true })
+        ]);
+
+        if (!mounted) return;
+
+        const newStats = {
+          totalProducts: productsCount || 0,
+          lowStockProducts: lowStockData?.length || 0,
+          totalCategories: categoriesCount || 0,
+          totalSuppliers: suppliersCount || 0
+        };
+        
+        console.log('✅ Estatísticas carregadas:', newStats);
+        setStats(newStats);
+        setLoading(false);
+      } catch (error) {
+        console.error('💥 Erro ao buscar estatísticas:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
-
-  const fetchStats = async () => {
-    if (hasLoadedRef.current) {
-      console.log('📊 Stats já foram carregadas, ignorando chamada duplicada');
-      return;
-    }
-
-    try {
-      console.log('📊 Carregando estatísticas do dashboard...');
-      setLoading(true);
-      hasLoadedRef.current = true;
-
-      // Buscar total de produtos
-      const { count: productsCount, error: productsError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      if (productsError) {
-        console.error('Erro ao buscar produtos:', productsError);
-      }
-
-      // Buscar produtos com estoque baixo
-      const { data: lowStockData, error: lowStockError } = await supabase
-        .from('products')
-        .select('stock_quantity, minimum_stock')
-        .lte('stock_quantity', 'minimum_stock');
-
-      if (lowStockError) {
-        console.error('Erro ao buscar produtos com estoque baixo:', lowStockError);
-      }
-
-      // Buscar total de categorias
-      const { count: categoriesCount, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*', { count: 'exact', head: true });
-
-      if (categoriesError) {
-        console.error('Erro ao buscar categorias:', categoriesError);
-      }
-
-      // Buscar total de fornecedores
-      const { count: suppliersCount, error: suppliersError } = await supabase
-        .from('suppliers')
-        .select('*', { count: 'exact', head: true });
-
-      if (suppliersError) {
-        console.error('Erro ao buscar fornecedores:', suppliersError);
-      }
-
-      const newStats = {
-        totalProducts: productsCount || 0,
-        lowStockProducts: lowStockData?.length || 0,
-        totalCategories: categoriesCount || 0,
-        totalSuppliers: suppliersCount || 0
-      };
-      
-      console.log('✅ Estatísticas carregadas:', newStats);
-      setStats(newStats);
-    } catch (error) {
-      console.error('💥 Erro inesperado ao buscar estatísticas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -105,13 +78,11 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Visão geral do seu negócio</p>
       </div>
 
-      {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-0 shadow-md bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -174,7 +145,6 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Cards de Ações Rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="border-0 shadow-md bg-white">
           <CardHeader>
