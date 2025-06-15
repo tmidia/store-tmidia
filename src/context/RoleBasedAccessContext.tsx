@@ -59,9 +59,9 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
           .select('module')
           .eq('user_id', user.id);
 
-        // Corrigir leitura: array sempre de string
-        const loadedPerms = permissions?.map(p => typeof p.module === 'string' ? p.module : String(p.module)) || [];
-        // Debug extra:
+        // Fix: enforce correct type for permissions (ModuleName[])
+        const loadedPerms = (permissions?.map((p) => p.module).filter(Boolean) ?? []) as ModuleName[];
+
         console.log('[RoleBasedAccess] Perfil cargado', {
           id: profile.id,
           user_type: profile.user_type,
