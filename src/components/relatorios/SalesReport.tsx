@@ -1,8 +1,10 @@
+
 import { useState } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ptBR } from 'date-fns/locale';
+import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 import { DateFilters } from './components/DateFilters';
 import { CashSessionsCard } from './components/CashSessionsCard';
@@ -13,6 +15,7 @@ import { SalesChart } from './components/SalesChart';
 import { NoDataCard } from './components/NoDataCard';
 
 export const SalesReport = () => {
+  const { isSuperAdmin } = useRoleBasedAccess();
   const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
   const [appliedDateFrom, setAppliedDateFrom] = useState<Date>(startOfMonth(new Date()));
@@ -255,11 +258,13 @@ export const SalesReport = () => {
 
       <CashSessionsCard cashSessions={cashSessions || []} />
 
-      <DebugInfoCard 
-        allTransactions={allTransactions}
-        cashSessions={cashSessions}
-        debugInfo={salesData?.debugInfo}
-      />
+      {isSuperAdmin() && (
+        <DebugInfoCard 
+          allTransactions={allTransactions}
+          cashSessions={cashSessions}
+          debugInfo={salesData?.debugInfo}
+        />
+      )}
 
       <SalesKPICards
         totalVendas={salesData?.totalVendas || 0}
