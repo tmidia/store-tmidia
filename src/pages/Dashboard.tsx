@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Package, 
@@ -10,21 +10,44 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Cache global para as estatísticas
+let globalStats: any = null;
+let statsLoadPromise: Promise<void> | null = null;
+
 const Dashboard = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState(globalStats || {
     totalProducts: 0,
     lowStockProducts: 0,
     totalCategories: 0,
     totalSuppliers: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!globalStats);
+  const hasLoadedStats = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
+    // Evitar múltiplas execuções
+    if (hasLoadedStats.current) return;
+    hasLoadedStats.current = true;
+
+    // Se já temos dados cached, usar eles
+    if (globalStats) {
+      setStats(globalStats);
+      setLoading(false);
+      return;
+    }
+
+    // Se já está carregando, aguardar a promise existente
+    if (statsLoadPromise) {
+      statsLoadPromise.then(() => {
+        setStats(globalStats);
+        setLoading(false);
+      });
+      return;
+    }
 
     const fetchStats = async () => {
       try {
-        console.log('📊 Carregando estatísticas...');
+        console.log('📊 [Dashboard] Carregando estatísticas...');
         
         const [
           { count: productsCount },
@@ -38,8 +61,6 @@ const Dashboard = () => {
           supabase.from('suppliers').select('*', { count: 'exact', head: true })
         ]);
 
-        if (!mounted) return;
-
         const newStats = {
           totalProducts: productsCount || 0,
           lowStockProducts: lowStockData?.length || 0,
@@ -47,22 +68,21 @@ const Dashboard = () => {
           totalSuppliers: suppliersCount || 0
         };
         
-        console.log('✅ Estatísticas carregadas:', newStats);
+        console.log('✅ [Dashboard] Estatísticas carregadas:', newStats);
+        
+        // Atualizar cache global
+        globalStats = newStats;
         setStats(newStats);
         setLoading(false);
       } catch (error) {
-        console.error('💥 Erro ao buscar estatísticas:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+        console.error('💥 [Dashboard] Erro ao buscar estatísticas:', error);
+        setLoading(false);
+      } finally {
+        statsLoadPromise = null;
       }
     };
 
-    fetchStats();
-
-    return () => {
-      mounted = false;
-    };
+    statsLoadPromise = fetchStats();
   }, []);
 
   if (loading) {

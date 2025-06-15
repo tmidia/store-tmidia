@@ -33,6 +33,8 @@ const ProtectedRoute = ({
   
   const navigate = useNavigate();
 
+  console.log('🔒 [ProtectedRoute] Estado:', { isLoading, userProfile: !!userProfile });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -42,6 +44,7 @@ const ProtectedRoute = ({
   }
 
   if (!userProfile) {
+    console.log('❌ [ProtectedRoute] Sem perfil de usuário');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -71,6 +74,7 @@ const ProtectedRoute = ({
 
   // Check for super admin requirement
   if (requireSuperAdmin && !isSuperAdmin()) {
+    console.log('❌ [ProtectedRoute] Requer superadmin');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -100,6 +104,7 @@ const ProtectedRoute = ({
 
   // Check for specific role requirement
   if (requiredRole && !hasRole(requiredRole)) {
+    console.log('❌ [ProtectedRoute] Papel insuficiente');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -129,6 +134,7 @@ const ProtectedRoute = ({
 
   // Check for specific permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
+    console.log('❌ [ProtectedRoute] Permissão insuficiente:', requiredPermission);
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -156,6 +162,7 @@ const ProtectedRoute = ({
     );
   }
 
+  console.log('✅ [ProtectedRoute] Acesso liberado');
   return <>{children}</>;
 };
 
