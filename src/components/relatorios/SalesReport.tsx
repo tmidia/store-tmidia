@@ -1,29 +1,16 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search, CreditCard, Banknote, QrCode, Clock } from 'lucide-react';
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ptBR } from 'date-fns/locale';
 
-const chartConfig = {
-  vendas: { label: "Vendas", color: "#3b82f6" },
-  receita: { label: "Receita", color: "#10b981" }
-};
-
-const paymentColors = {
-  dinheiro: "#10b981",
-  cartao: "#3b82f6", 
-  pix: "#f59e0b",
-  misto: "#8b5cf6"
-};
+import { DateFilters } from './components/DateFilters';
+import { CashSessionsCard } from './components/CashSessionsCard';
+import { DebugInfoCard } from './components/DebugInfoCard';
+import { SalesKPICards } from './components/SalesKPICards';
+import { PaymentMethodCards } from './components/PaymentMethodCards';
+import { SalesChart } from './components/SalesChart';
+import { NoDataCard } from './components/NoDataCard';
 
 export const SalesReport = () => {
   const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
@@ -251,334 +238,48 @@ export const SalesReport = () => {
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method) {
-      case 'dinheiro': return <Banknote className="w-4 h-4" />;
-      case 'cartao': return <CreditCard className="w-4 h-4" />;
-      case 'pix': return <QrCode className="w-4 h-4" />;
-      default: return <DollarSign className="w-4 h-4" />;
-    }
-  };
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'dinheiro': return 'Dinheiro';
-      case 'cartao': return 'Cartão';
-      case 'pix': return 'PIX';
-      case 'misto': return 'Misto';
-      default: return 'Outros';
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Filtros de Data */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
-            Período de Análise
-          </CardTitle>
-          <CardDescription>
-            Selecione o período desejado e clique em "Buscar" para aplicar os filtros
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Inicial</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
-                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={dateFrom} onSelect={(date) => date && setDateFrom(date)} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Final</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
-                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={dateTo} onSelect={(date) => date && setDateTo(date)} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+      <DateFilters
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        appliedDateFrom={appliedDateFrom}
+        appliedDateTo={appliedDateTo}
+        totalVendas={salesData?.totalVendas}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onSearch={handleSearch}
+        onExportToPDF={exportToPDF}
+        hasData={!!salesData}
+      />
 
-            <Button onClick={handleSearch} className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Buscar
-            </Button>
+      <CashSessionsCard cashSessions={cashSessions || []} />
 
-            <Button 
-              onClick={exportToPDF} 
-              variant="outline" 
-              className="flex items-center gap-2"
-              disabled={!salesData}
-            >
-              <Download className="w-4 h-4" />
-              Exportar PDF
-            </Button>
-          </div>
+      <DebugInfoCard 
+        allTransactions={allTransactions}
+        cashSessions={cashSessions}
+        debugInfo={salesData?.debugInfo}
+      />
 
-          {appliedDateFrom && appliedDateTo && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Período aplicado:</strong> {format(appliedDateFrom, 'dd/MM/yyyy', { locale: ptBR })} até {format(appliedDateTo, 'dd/MM/yyyy', { locale: ptBR })}
-              </p>
-              {salesData && (
-                <p className="text-xs text-blue-600 mt-1">
-                  Encontradas {salesData.totalVendas} vendas no período
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <SalesKPICards
+        totalVendas={salesData?.totalVendas || 0}
+        totalReceita={salesData?.totalReceita || 0}
+        ticketMedio={salesData?.ticketMedio || 0}
+      />
 
-      {/* Sessões de Caixa */}
-      {cashSessions && cashSessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Sessões de Caixa
-            </CardTitle>
-            <CardDescription>
-              Controle de abertura e fechamento do caixa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {cashSessions.map((session) => (
-                <Card key={session.id} className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Abertura</p>
-                        <p className="text-lg font-semibold">{formatCurrency(Number(session.opening_amount))}</p>
-                        <p className="text-xs text-gray-400">
-                          {format(new Date(session.opened_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                        </p>
-                      </div>
-                      
-                      {session.status === 'closed' && (
-                        <>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Fechamento</p>
-                            <p className="text-lg font-semibold">{formatCurrency(Number(session.closing_amount))}</p>
-                            <p className="text-xs text-gray-400">
-                              {session.closed_at && format(new Date(session.closed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Esperado</p>
-                            <p className="text-lg font-semibold">{formatCurrency(Number(session.expected_amount))}</p>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Diferença</p>
-                            <p className={`text-lg font-semibold ${Number(session.difference) === 0 ? 'text-green-600' : Number(session.difference) > 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                              {formatCurrency(Number(session.difference))}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {Number(session.difference) === 0 ? 'Conferido' : Number(session.difference) > 0 ? 'Sobra' : 'Falta'}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                      
-                      {session.status === 'open' && (
-                        <div className="md:col-span-3 flex items-center">
-                          <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                            Caixa Aberto
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <PaymentMethodCards paymentTotals={salesData?.paymentTotals || {}} />
 
-      {/* Debug Information */}
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="text-yellow-800">🔍 Informações de Debug</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            <p><strong>Total de transações no sistema:</strong> {allTransactions?.length || 0}</p>
-            <p><strong>Vendas no sistema:</strong> {allTransactions?.filter(t => t.type === 'venda').length || 0}</p>
-            <p><strong>Sessões de caixa no período:</strong> {cashSessions?.length || 0}</p>
-            {salesData?.debugInfo && (
-              <>
-                <p><strong>Período consultado:</strong> {salesData.debugInfo.periodo.startDate} até {salesData.debugInfo.periodo.endDate}</p>
-                <p><strong>Vendas por tipo "venda":</strong> {salesData.debugInfo.vendasType}</p>
-                <p><strong>Vendas por descrição:</strong> {salesData.debugInfo.vendasDesc}</p>
-                <p><strong>Todas transações no período:</strong> {salesData.debugInfo.allInPeriod}</p>
-              </>
-            )}
-            
-            {/* Mostrar algumas transações recentes */}
-            {allTransactions && allTransactions.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-medium text-yellow-800 mb-2">Últimas 5 transações:</h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allTransactions.slice(0, 5).map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{transaction.transaction_date}</TableCell>
-                        <TableCell>{transaction.type}</TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell>{formatCurrency(Number(transaction.amount))}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <SalesChart 
+        chartData={salesData?.chartData || []}
+        isLoading={isLoading}
+      />
 
-      {/* KPIs de Vendas */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{salesData?.totalVendas || 0}</div>
-            <p className="text-xs text-muted-foreground">transações no período</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(salesData?.totalReceita || 0)}</div>
-            <p className="text-xs text-muted-foreground">no período selecionado</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(salesData?.ticketMedio || 0)}</div>
-            <p className="text-xs text-muted-foreground">por transação</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Vendas por Forma de Pagamento */}
-      {salesData?.paymentTotals && Object.keys(salesData.paymentTotals).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas por Forma de Pagamento</CardTitle>
-            <CardDescription>Distribuição das vendas conforme meio de pagamento</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {Object.entries(salesData.paymentTotals).map(([method, data]: [string, any]) => (
-                <Card key={method} className="border-l-4" style={{ borderLeftColor: paymentColors[method as keyof typeof paymentColors] || '#6b7280' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {getPaymentMethodIcon(method)}
-                        <span className="text-sm font-medium">{getPaymentMethodLabel(method)}</span>
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <div className="text-2xl font-bold">{formatCurrency(data.total)}</div>
-                      <p className="text-xs text-muted-foreground">{data.count} transação(ões)</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Gráfico de Vendas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Evolução das Vendas</CardTitle>
-          <CardDescription>Vendas e receita por dia no período selecionado</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={salesData?.chartData || []}>
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="vendas" fill={chartConfig.vendas.color} name="Vendas" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Debug - Mostrar transações encontradas se não houver dados */}
       {salesData?.totalVendas === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Debug - Informações de Busca</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <p><strong>Período consultado:</strong> {format(appliedDateFrom, 'yyyy-MM-dd')} até {format(appliedDateTo, 'yyyy-MM-dd')}</p>
-              <p><strong>Transações encontradas:</strong> {salesData?.transactions?.length || 0}</p>
-              <p className="text-orange-600">
-                Nenhuma venda encontrada no período. Verifique se há vendas registradas nas datas selecionadas.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <NoDataCard
+          appliedDateFrom={appliedDateFrom}
+          appliedDateTo={appliedDateTo}
+          transactionsLength={salesData?.transactions?.length || 0}
+        />
       )}
     </div>
   );
