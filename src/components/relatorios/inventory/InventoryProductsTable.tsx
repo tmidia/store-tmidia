@@ -9,7 +9,7 @@ type Product = {
   categories: { name: string } | null;
   stock_quantity: number;
   minimum_stock: number;
-  cost_price: string | null;
+  cost_price: number | null;
 };
 
 type StockStatus = {
@@ -62,7 +62,7 @@ export const InventoryProductsTable = ({
               <TableBody>
                 {products.map((product) => {
                   const status = getStockStatus(product);
-                  const totalValue = product.stock_quantity * Number(product.cost_price || 0);
+                  const totalValue = product.stock_quantity * (product.cost_price || 0);
 
                   return (
                     <TableRow key={product.id}>
@@ -73,7 +73,7 @@ export const InventoryProductsTable = ({
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
-                      <TableCell>{formatCurrency(Number(product.cost_price || 0))}</TableCell>
+                      <TableCell>{formatCurrency(product.cost_price || 0)}</TableCell>
                       <TableCell>{formatCurrency(totalValue)}</TableCell>
                     </TableRow>
                   );

@@ -13,7 +13,7 @@ type Product = {
   name: string;
   stock_quantity: number;
   minimum_stock: number;
-  cost_price: string | null;
+  cost_price: number | null;
   categories: { name: string } | null;
   suppliers: { name: string } | null;
 };
@@ -45,13 +45,13 @@ export const InventoryReport = () => {
       const outOfStockProducts = typedProducts.filter(p => p.stock_quantity === 0);
       
       const totalValue = typedProducts.reduce((sum, p) => 
-        sum + (p.stock_quantity * Number(p.cost_price || 0)), 0
+        sum + (p.stock_quantity * (p.cost_price || 0)), 0
       );
 
       const mostValuableProducts: ValuableProduct[] = typedProducts
         .map(p => ({
           ...p,
-          totalValue: p.stock_quantity * Number(p.cost_price || 0)
+          totalValue: p.stock_quantity * (p.cost_price || 0)
         }))
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 10);

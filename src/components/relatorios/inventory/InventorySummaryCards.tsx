@@ -14,7 +14,7 @@ interface ValuableProduct {
   id: string;
   name: string;
   stock_quantity: number;
-  cost_price: string | null;
+  cost_price: number | null;
   totalValue: number;
 }
 
@@ -90,7 +90,7 @@ export const InventorySummaryCards = ({
                   <div>
                     <p className="font-medium text-sm">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Qtd: {product.stock_quantity} × {formatCurrency(Number(product.cost_price || 0))}
+                      Qtd: {product.stock_quantity} × {formatCurrency(product.cost_price || 0)}
                     </p>
                   </div>
                   <div className="text-right">
