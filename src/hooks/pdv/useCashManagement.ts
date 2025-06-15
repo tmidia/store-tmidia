@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +11,24 @@ export const useCashManagement = () => {
     const caixaStatus = localStorage.getItem('caixaAberto');
     const sessionIdLocal = localStorage.getItem('sessionId');
     
-    console.log('🔍 Verificando status do caixa:', { caixaStatus, sessionIdLocal });
-    
-    setCaixaAberto(caixaStatus === 'true');
-    if (sessionIdLocal) {
+    console.log('🔍 Verificando status do caixa ao carregar:', { caixaStatus, sessionIdLocal });
+
+    if (caixaStatus === 'true' && sessionIdLocal) {
+      console.log('✅ Estado do caixa consistente. Definindo como aberto.');
+      setCaixaAberto(true);
       setSessionId(sessionIdLocal);
+    } else if (caixaStatus === 'true' && !sessionIdLocal) {
+      console.warn('⚠️ Inconsistência detectada: Caixa "aberto" mas sem ID de sessão. Forçando o estado para "fechado".');
+      setCaixaAberto(false);
+      setSessionId(null);
+      localStorage.removeItem('caixaAberto');
+      localStorage.removeItem('valorInicialCaixa');
+      localStorage.removeItem('dataAberturaCaixa');
+      localStorage.removeItem('sessionId');
+    } else {
+      console.log('ℹ️ Caixa está corretamente fechado.');
+      setCaixaAberto(false);
+      setSessionId(null);
     }
   }, []);
 
@@ -70,88 +82,116 @@ export const useCashManagement = () => {
   };
 
   const fecharCaixa = async () => {
-    const valorFinal = prompt("Digite o valor final do caixa:");
-    if (valorFinal && !isNaN(parseFloat(valorFinal)) && sessionId) {
-      try {
-        const valorInicialStr = localStorage.getItem('valorInicialCaixa');
-        const valorInicial = valorInicialStr ? parseFloat(valorInicialStr) : 0;
-        const valorFinalNum = parseFloat(valorFinal);
-        
-        // Calcular vendas do dia para o valor esperado
-        const { data: vendas } = await supabase
-          .from('financial_transactions')
-          .select('amount')
-          .eq('type', 'venda')
-          .gte('created_at', new Date().toISOString().split('T')[0]);
+    const valorFinalPrompt = prompt("Digite o valor final do caixa:");
+    if (valorFinalPrompt === null) {
+      console.log('Fechamento de caixa cancelado pelo usuário.');
+      return; // User cancelled
+    }
 
-        const totalVendas = vendas?.reduce((sum, venda) => sum + Number(venda.amount), 0) || 0;
-        const valorEsperado = valorInicial + totalVendas;
-        const diferenca = valorFinalNum - valorEsperado;
+    const valorFinal = parseFloat(valorFinalPrompt);
+    if (isNaN(valorFinal)) {
+      toast({
+        title: "Valor inválido",
+        description: "O valor final deve ser um número.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!sessionId) {
+      console.error('❌ Erro Crítico: Tentativa de fechar caixa sem um ID de sessão. Corrigindo estado local.');
+      toast({
+        title: "Erro de Sessão",
+        description: "A sessão do caixa não foi encontrada. O caixa será forçado a fechar localmente. Por favor, verifique os relatórios.",
+        variant: "destructive",
+      });
+      setCaixaAberto(false);
+      setSessionId(null);
+      localStorage.removeItem('caixaAberto');
+      localStorage.removeItem('valorInicialCaixa');
+      localStorage.removeItem('dataAberturaCaixa');
+      localStorage.removeItem('sessionId');
+      return;
+    }
 
-        console.log('💰 Fechando caixa:', {
-          valorInicial,
-          valorFinal: valorFinalNum,
-          totalVendas,
-          valorEsperado,
-          diferenca,
-          sessionId
-        });
+    try {
+      const valorInicialStr = localStorage.getItem('valorInicialCaixa');
+      const dataAbertura = localStorage.getItem('dataAberturaCaixa');
+      const valorInicial = valorInicialStr ? parseFloat(valorInicialStr) : 0;
 
-        // Atualizar sessão de caixa
-        const { error } = await supabase
-          .from('cash_sessions')
-          .update({
-            closing_amount: valorFinalNum,
-            expected_amount: valorEsperado,
-            difference: diferenca,
-            closed_at: new Date().toISOString(),
-            status: 'closed'
-          })
-          .eq('id', sessionId);
+      if (!dataAbertura) {
+        toast({ title: "Erro de Dados", description: "Não foi possível encontrar a data de abertura do caixa. O cálculo pode estar incorreto.", variant: "destructive" });
+      }
+      
+      const { data: vendas } = await supabase
+        .from('financial_transactions')
+        .select('amount')
+        .eq('type', 'venda')
+        .gte('created_at', dataAbertura || new Date(0).toISOString()); // Fallback to epoch if no date found
 
-        if (error) {
-          console.error('Erro ao fechar caixa:', error);
-          toast({
-            title: "Erro ao fechar caixa",
-            description: "Não foi possível registrar o fechamento do caixa.",
-            variant: "destructive",
-          });
-          return;
-        }
+      const totalVendas = vendas?.reduce((sum, venda) => sum + Number(venda.amount), 0) || 0;
+      const valorEsperado = valorInicial + totalVendas;
+      const diferenca = valorFinal - valorEsperado;
 
-        console.log('✅ Caixa fechado no banco de dados com sucesso');
+      console.log('💰 Fechando caixa:', {
+        valorInicial,
+        valorFinal,
+        totalVendas,
+        valorEsperado,
+        diferenca,
+        sessionId
+      });
 
-        // Primeiro, atualizar os estados
-        setCaixaAberto(false);
-        setSessionId(null);
+      // Atualizar sessão de caixa
+      const { error } = await supabase
+        .from('cash_sessions')
+        .update({
+          closing_amount: valorFinal,
+          expected_amount: valorEsperado,
+          difference: diferenca,
+          closed_at: new Date().toISOString(),
+          status: 'closed'
+        })
+        .eq('id', sessionId);
 
-        // Depois, limpar o localStorage
-        localStorage.removeItem('caixaAberto');
-        localStorage.removeItem('valorInicialCaixa');
-        localStorage.removeItem('valorFinalCaixa');
-        localStorage.removeItem('dataAberturaCaixa');
-        localStorage.removeItem('dataFechamentoCaixa');
-        localStorage.removeItem('sessionId');
-        
-        console.log('🧹 localStorage limpo e estados atualizados');
-        
-        const mensagem = diferenca === 0 
-          ? `Caixa fechado! Valor final: R$ ${valorFinalNum.toFixed(2)} (Conferido)`
-          : `Caixa fechado! Valor final: R$ ${valorFinalNum.toFixed(2)} (Diferença: R$ ${diferenca.toFixed(2)})`;
-        
-        toast({
-          title: "Caixa fechado!",
-          description: mensagem,
-          variant: diferenca === 0 ? "default" : "destructive",
-        });
-      } catch (error) {
-        console.error('Erro ao fechar caixa:', error);
+      if (error) {
+        console.error('Erro ao fechar caixa no DB:', error);
         toast({
           title: "Erro ao fechar caixa",
-          description: "Tente novamente.",
+          description: "Não foi possível registrar o fechamento no banco de dados.",
           variant: "destructive",
         });
+        return;
       }
+
+      console.log('✅ Caixa fechado no banco de dados com sucesso');
+
+      // Limpar estados e localStorage
+      setCaixaAberto(false);
+      setSessionId(null);
+      localStorage.removeItem('caixaAberto');
+      localStorage.removeItem('valorInicialCaixa');
+      localStorage.removeItem('dataAberturaCaixa');
+      localStorage.removeItem('sessionId');
+      
+      console.log('🧹 localStorage limpo e estados atualizados');
+      
+      const mensagem = diferenca === 0 
+        ? `Caixa fechado! Valor final: R$ ${valorFinal.toFixed(2)} (Conferido)`
+        : `Caixa fechado! Valor final: R$ ${valorFinal.toFixed(2)} (Diferença: R$ ${diferenca.toFixed(2)})`;
+      
+      toast({
+        title: "Caixa fechado!",
+        description: mensagem,
+        variant: diferenca === 0 ? "default" : "destructive",
+      });
+    } catch (error) {
+      console.error('Erro inesperado ao fechar caixa:', error);
+      toast({
+        title: "Erro ao fechar caixa",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
