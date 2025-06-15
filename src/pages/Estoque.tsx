@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -230,9 +229,9 @@ const Estoque = () => {
               const StatusIcon = status.icon;
               
               return (
-                <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div key={product.id} className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center space-x-4">
-                    <StatusIcon className="w-6 h-6 text-gray-400" />
+                    <StatusIcon className="h-6 w-6 text-gray-400" />
                     <div>
                       <h3 className="font-semibold text-gray-900">{product.name}</h3>
                       <p className="text-sm text-gray-600">Código: {product.code}</p>
@@ -240,15 +239,17 @@ const Estoque = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{product.stock_quantity} un.</p>
-                      <p className="text-xs text-gray-600">Min: {product.minimum_stock}</p>
+                  <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
+                    <div className="flex items-center space-x-2 sm:space-x-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">{product.stock_quantity} un.</p>
+                        <p className="text-xs text-gray-600">Min: {product.minimum_stock}</p>
+                      </div>
+                      
+                      <Badge className={`${status.color} whitespace-nowrap`}>
+                        {status.label}
+                      </Badge>
                     </div>
-                    
-                    <Badge className={status.color}>
-                      {status.label}
-                    </Badge>
                     
                     <Dialog open={isDialogOpen && selectedProduct?.id === product.id} onOpenChange={(open) => {
                       setIsDialogOpen(open);
@@ -256,8 +257,8 @@ const Estoque = () => {
                       else setSelectedProduct(null);
                     }}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4 mr-1" />
+                        <Button variant="outline" size="sm" className="whitespace-nowrap">
+                          <Edit className="mr-1 h-4 w-4" />
                           Movimentar
                         </Button>
                       </DialogTrigger>
@@ -278,7 +279,7 @@ const Estoque = () => {
                               onClick={() => setMovementType('entrada')}
                               className="w-full"
                             >
-                              <TrendingUp className="w-4 h-4 mr-2" />
+                              <TrendingUp className="mr-2 h-4 w-4" />
                               Entrada
                             </Button>
                             <Button
@@ -286,7 +287,7 @@ const Estoque = () => {
                               onClick={() => setMovementType('saida')}
                               className="w-full"
                             >
-                              <TrendingDown className="w-4 h-4 mr-2" />
+                              <TrendingDown className="mr-2 h-4 w-4" />
                               Saída
                             </Button>
                           </div>

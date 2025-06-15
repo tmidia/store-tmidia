@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,20 +80,20 @@ export const InventoryReport = () => {
   return (
     <div className="space-y-6">
       {/* Header com botões de ação */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Relatório de Estoque</h2>
           <p className="text-sm text-muted-foreground">Análise completa do inventário</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={handleRefresh} variant="outline" className="flex items-center justify-center gap-2">
             <Search className="w-4 h-4" />
             Atualizar Dados
           </Button>
           <Button 
             onClick={exportToPDF}
             variant="outline" 
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2"
             disabled={!inventoryData}
           >
             <Download className="w-4 h-4" />
