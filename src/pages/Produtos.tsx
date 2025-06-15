@@ -70,14 +70,14 @@ const Produtos = () => {
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
           <p className="text-gray-600 mt-1">Gerencie seu catálogo de produtos</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-blue-dark" onClick={handleNewProduct}>
+            <Button className="bg-primary hover:bg-blue-dark w-full sm:w-auto" onClick={handleNewProduct}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Produto
             </Button>

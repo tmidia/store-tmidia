@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -191,7 +190,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Nome do Produto</Label>
               <Input
@@ -222,7 +221,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="category_id">Categoria</Label>
               <Select value={formData.category_id} onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}>
@@ -269,7 +268,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
               </Label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="cost_price">Preço de Custo</Label>
                 <Input
@@ -320,7 +319,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="stock_quantity">Quantidade em Estoque</Label>
               <Input
