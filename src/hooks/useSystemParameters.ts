@@ -35,7 +35,8 @@ export const useSystemParameters = () => {
   };
 
   const isReceiptPrintingEnabled = () => {
-    return parameters?.enable_receipt_printing ?? false;
+    // Temporarily return false until the database field is added
+    return false;
   };
 
   const isManualDiscountAllowed = () => {

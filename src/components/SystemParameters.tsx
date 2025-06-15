@@ -44,7 +44,7 @@ const SystemParameters = () => {
           show_low_stock_alert: data.show_low_stock_alert ?? true,
           show_due_accounts: data.show_due_accounts ?? true,
           show_daily_report: data.show_daily_report ?? true,
-          enable_receipt_printing: data.enable_receipt_printing ?? false
+          enable_receipt_printing: false // Temporarily disabled until database field is added
         });
       }
     } catch (error) {
@@ -57,17 +57,20 @@ const SystemParameters = () => {
     setIsLoading(true);
 
     try {
+      // Exclude enable_receipt_printing until database field is added
+      const { enable_receipt_printing, ...dataToSave } = formData;
+      
       if (parameters) {
         const { error } = await supabase
           .from('system_parameters')
-          .update(formData)
+          .update(dataToSave)
           .eq('id', parameters.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('system_parameters')
-          .insert(formData);
+          .insert(dataToSave);
 
         if (error) throw error;
       }
@@ -179,15 +182,15 @@ const SystemParameters = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between opacity-50">
               <div className="space-y-0.5">
                 <Label htmlFor="enable_receipt_printing">Habilitar impressão de cupom</Label>
-                <p className="text-sm text-gray-500">Permite imprimir cupom fiscal após finalizar a venda</p>
+                <p className="text-sm text-gray-500">Permite imprimir cupom fiscal após finalizar a venda (Em desenvolvimento)</p>
               </div>
               <Switch
                 id="enable_receipt_printing"
-                checked={formData.enable_receipt_printing}
-                onCheckedChange={(value) => handleSwitchChange('enable_receipt_printing', value)}
+                checked={false}
+                disabled={true}
               />
             </div>
           </div>
