@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Package, 
@@ -20,83 +20,85 @@ const Dashboard = () => {
     totalSuppliers: 0
   });
   const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchStats = async () => {
-      try {
-        console.log('📊 Carregando estatísticas do dashboard...');
-        setLoading(true);
-
-        // Buscar total de produtos
-        const { count: productsCount, error: productsError } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
-
-        if (productsError) {
-          console.error('Erro ao buscar produtos:', productsError);
-        }
-
-        // Buscar produtos com estoque baixo
-        const { data: lowStockData, error: lowStockError } = await supabase
-          .from('products')
-          .select('stock_quantity, minimum_stock')
-          .lte('stock_quantity', 'minimum_stock');
-
-        if (lowStockError) {
-          console.error('Erro ao buscar produtos com estoque baixo:', lowStockError);
-        }
-
-        // Buscar total de categorias
-        const { count: categoriesCount, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*', { count: 'exact', head: true });
-
-        if (categoriesError) {
-          console.error('Erro ao buscar categorias:', categoriesError);
-        }
-
-        // Buscar total de fornecedores
-        const { count: suppliersCount, error: suppliersError } = await supabase
-          .from('suppliers')
-          .select('*', { count: 'exact', head: true });
-
-        if (suppliersError) {
-          console.error('Erro ao buscar fornecedores:', suppliersError);
-        }
-
-        if (isMounted) {
-          const newStats = {
-            totalProducts: productsCount || 0,
-            lowStockProducts: lowStockData?.length || 0,
-            totalCategories: categoriesCount || 0,
-            totalSuppliers: suppliersCount || 0
-          };
-          
-          console.log('✅ Estatísticas carregadas:', newStats);
-          setStats(newStats);
-        }
-      } catch (error) {
-        console.error('💥 Erro inesperado ao buscar estatísticas:', error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchStats();
-
-    return () => {
-      isMounted = false;
-    };
+    if (!hasLoadedRef.current) {
+      fetchStats();
+    }
   }, []);
+
+  const fetchStats = async () => {
+    if (hasLoadedRef.current) {
+      console.log('📊 Stats já foram carregadas, ignorando chamada duplicada');
+      return;
+    }
+
+    try {
+      console.log('📊 Carregando estatísticas do dashboard...');
+      setLoading(true);
+      hasLoadedRef.current = true;
+
+      // Buscar total de produtos
+      const { count: productsCount, error: productsError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      if (productsError) {
+        console.error('Erro ao buscar produtos:', productsError);
+      }
+
+      // Buscar produtos com estoque baixo
+      const { data: lowStockData, error: lowStockError } = await supabase
+        .from('products')
+        .select('stock_quantity, minimum_stock')
+        .lte('stock_quantity', 'minimum_stock');
+
+      if (lowStockError) {
+        console.error('Erro ao buscar produtos com estoque baixo:', lowStockError);
+      }
+
+      // Buscar total de categorias
+      const { count: categoriesCount, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true });
+
+      if (categoriesError) {
+        console.error('Erro ao buscar categorias:', categoriesError);
+      }
+
+      // Buscar total de fornecedores
+      const { count: suppliersCount, error: suppliersError } = await supabase
+        .from('suppliers')
+        .select('*', { count: 'exact', head: true });
+
+      if (suppliersError) {
+        console.error('Erro ao buscar fornecedores:', suppliersError);
+      }
+
+      const newStats = {
+        totalProducts: productsCount || 0,
+        lowStockProducts: lowStockData?.length || 0,
+        totalCategories: categoriesCount || 0,
+        totalSuppliers: suppliersCount || 0
+      };
+      
+      console.log('✅ Estatísticas carregadas:', newStats);
+      setStats(newStats);
+    } catch (error) {
+      console.error('💥 Erro inesperado ao buscar estatísticas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando dashboard...</p>
+        </div>
       </div>
     );
   }

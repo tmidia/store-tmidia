@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -16,14 +16,24 @@ interface UserProfile {
 export const useRoleBasedAccess = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hasCheckedRef = useRef(false);
+  const isCheckingRef = useRef(false);
 
   useEffect(() => {
-    checkUserAccess();
+    if (!hasCheckedRef.current && !isCheckingRef.current) {
+      checkUserAccess();
+    }
   }, []);
 
   const checkUserAccess = async () => {
+    if (isCheckingRef.current) {
+      console.log('🔄 checkUserAccess já está executando, ignorando chamada duplicada');
+      return;
+    }
+
     try {
-      console.log('🔍 Verificando acesso do usuário...');
+      console.log('🔍 Iniciando verificação de acesso do usuário...');
+      isCheckingRef.current = true;
       setIsLoading(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +41,7 @@ export const useRoleBasedAccess = () => {
       if (!user) {
         console.log('❌ Usuário não autenticado');
         setUserProfile(null);
-        setIsLoading(false);
+        hasCheckedRef.current = true;
         return;
       }
 
@@ -47,14 +57,14 @@ export const useRoleBasedAccess = () => {
       if (profileError) {
         console.error('❌ Erro ao buscar perfil:', profileError);
         setUserProfile(null);
-        setIsLoading(false);
+        hasCheckedRef.current = true;
         return;
       }
 
       if (!profile || !profile.is_active) {
         console.log('❌ Perfil não encontrado ou inativo');
         setUserProfile(null);
-        setIsLoading(false);
+        hasCheckedRef.current = true;
         return;
       }
 
@@ -80,10 +90,13 @@ export const useRoleBasedAccess = () => {
 
       console.log('🎯 Perfil completo carregado:', userProfileData);
       setUserProfile(userProfileData);
+      hasCheckedRef.current = true;
     } catch (error) {
       console.error('💥 Erro inesperado ao verificar acesso:', error);
       setUserProfile(null);
+      hasCheckedRef.current = true;
     } finally {
+      isCheckingRef.current = false;
       setIsLoading(false);
     }
   };
