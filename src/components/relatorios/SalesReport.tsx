@@ -1,0 +1,193 @@
+
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, BarChart, Bar } from 'recharts';
+
+const chartConfig = {
+  vendas: { label: "Vendas", color: "#3b82f6" },
+  receita: { label: "Receita", color: "#10b981" }
+};
+
+export const SalesReport = () => {
+  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
+  const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
+
+  const { data: salesData, isLoading } = useQuery({
+    queryKey: ['sales-report', dateFrom, dateTo],
+    queryFn: async () => {
+      const { data: transactions, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .eq('type', 'venda')
+        .gte('transaction_date', format(dateFrom, 'yyyy-MM-dd'))
+        .lte('transaction_date', format(dateTo, 'yyyy-MM-dd'))
+        .order('transaction_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Agrupar por data
+      const groupedData = transactions?.reduce((acc: any, transaction) => {
+        const date = transaction.transaction_date;
+        if (!acc[date]) {
+          acc[date] = { date, vendas: 0, receita: 0 };
+        }
+        acc[date].vendas += 1;
+        acc[date].receita += Number(transaction.amount || 0);
+        return acc;
+      }, {});
+
+      const chartData = Object.values(groupedData || {}).map((item: any) => ({
+        ...item,
+        date: format(new Date(item.date), 'dd/MM', { locale: ptBR })
+      }));
+
+      const totalVendas = transactions?.length || 0;
+      const totalReceita = transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+      const ticketMedio = totalVendas > 0 ? totalReceita / totalVendas : 0;
+
+      return {
+        chartData,
+        totalVendas,
+        totalReceita,
+        ticketMedio,
+        transactions: transactions || []
+      };
+    }
+  });
+
+  const exportToPDF = () => {
+    // Implementação futura de exportação para PDF
+    console.log('Exportando relatório de vendas para PDF...');
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filtros de Data */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5" />
+            Período de Análise
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Inicial</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateFrom} onSelect={(date) => date && setDateFrom(date)} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Final</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateTo} onSelect={(date) => date && setDateTo(date)} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Button onClick={exportToPDF} variant="outline" className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs de Vendas */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{salesData?.totalVendas || 0}</div>
+            <p className="text-xs text-muted-foreground">transações no período</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(salesData?.totalReceita || 0)}</div>
+            <p className="text-xs text-muted-foreground">no período selecionado</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(salesData?.ticketMedio || 0)}</div>
+            <p className="text-xs text-muted-foreground">por transação</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráfico de Vendas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Evolução das Vendas</CardTitle>
+          <CardDescription>Vendas e receita por dia no período selecionado</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesData?.chartData || []}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="vendas" fill={chartConfig.vendas.color} name="Vendas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

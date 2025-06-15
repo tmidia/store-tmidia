@@ -27,6 +27,7 @@ import IntegrationsSettings from "./components/IntegrationsSettings";
 import LogoutButton from "./components/LogoutButton";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Despesas from "./pages/Despesas";
+import Relatorios from "./pages/Relatorios";
 import { useRoleBasedAccess } from './hooks/useRoleBasedAccess';
 import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
 
@@ -194,10 +195,7 @@ const App = () => (
                 <AuthWrapper>
                   <ProtectedRoute requiredPermission="relatorios">
                     <MainLayout>
-                      <div className="p-6">
-                        <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
-                        <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                      </div>
+                      <Relatorios />
                     </MainLayout>
                   </ProtectedRoute>
                 </AuthWrapper>
