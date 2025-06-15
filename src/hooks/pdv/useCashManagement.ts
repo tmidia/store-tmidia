@@ -105,11 +105,15 @@ export const useCashManagement = () => {
           return;
         }
 
-        localStorage.setItem('caixaAberto', 'false');
-        localStorage.setItem('valorFinalCaixa', valorFinal);
-        localStorage.setItem('dataFechamentoCaixa', new Date().toISOString());
+        // Limpar localStorage APÓS confirmação de sucesso no banco
+        localStorage.removeItem('caixaAberto');
+        localStorage.removeItem('valorInicialCaixa');
+        localStorage.removeItem('valorFinalCaixa');
+        localStorage.removeItem('dataAberturaCaixa');
+        localStorage.removeItem('dataFechamentoCaixa');
         localStorage.removeItem('sessionId');
         
+        // Atualizar estados APÓS limpar localStorage
         setSessionId(null);
         setCaixaAberto(false);
         
