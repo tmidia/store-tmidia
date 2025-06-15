@@ -4,9 +4,12 @@ import { CreditCard, Banknote, QrCode, DollarSign } from 'lucide-react';
 
 const paymentColors = {
   dinheiro: "#10b981",
-  cartao: "#3b82f6", 
+  cartao_credito: "#3b82f6", 
+  cartao_debito: "#06b6d4",
   pix: "#f59e0b",
-  misto: "#8b5cf6"
+  misto: "#8b5cf6",
+  // Manter compatibilidade com registros antigos
+  cartao: "#3b82f6"
 };
 
 interface PaymentTotals {
@@ -31,6 +34,8 @@ export const PaymentMethodCards = ({ paymentTotals }: PaymentMethodCardsProps) =
   const getPaymentMethodIcon = (method: string) => {
     switch (method) {
       case 'dinheiro': return <Banknote className="w-4 h-4" />;
+      case 'cartao_credito': return <CreditCard className="w-4 h-4" />;
+      case 'cartao_debito': return <CreditCard className="w-4 h-4" />;
       case 'cartao': return <CreditCard className="w-4 h-4" />;
       case 'pix': return <QrCode className="w-4 h-4" />;
       default: return <DollarSign className="w-4 h-4" />;
@@ -40,7 +45,9 @@ export const PaymentMethodCards = ({ paymentTotals }: PaymentMethodCardsProps) =
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
       case 'dinheiro': return 'Dinheiro';
-      case 'cartao': return 'Cartão';
+      case 'cartao_credito': return 'Cartão de Crédito';
+      case 'cartao_debito': return 'Cartão de Débito';
+      case 'cartao': return 'Cartão (legado)';
       case 'pix': return 'PIX';
       case 'misto': return 'Misto';
       default: return 'Outros';
