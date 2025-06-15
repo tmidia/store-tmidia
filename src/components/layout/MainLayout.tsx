@@ -1,4 +1,7 @@
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
@@ -9,8 +12,39 @@ interface MainLayoutProps {
   children: React.ReactNode;
 }
 
+type CompanySettings = Database['public']['Tables']['company_settings']['Row'];
+
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const { userProfile } = useRoleBasedAccess();
+  const [companySettings, setCompanySettings] = useState<Pick<CompanySettings, 'logo_url'> | null>(null);
+
+  const fetchCompanySettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('logo_url')
+        .maybeSingle();
+      if (data) {
+        setCompanySettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching company settings for layout:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanySettings();
+
+    const handleSettingsUpdate = () => {
+      fetchCompanySettings();
+    };
+    
+    window.addEventListener('companySettingsUpdated', handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener('companySettingsUpdated', handleSettingsUpdate);
+    };
+  }, []);
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -30,7 +64,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         <main className="flex-1 bg-gray-50/50">
           <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
             <div className="lg:hidden h-14 px-4 flex justify-between items-center">
-              <SidebarTrigger />
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                {companySettings?.logo_url && (
+                  <img src={companySettings.logo_url} alt="Logo da empresa" className="h-8 w-auto" />
+                )}
+              </div>
               <div className="flex items-center gap-4">
                 {userProfile && (
                   <Avatar className="h-8 w-8">
@@ -41,22 +80,31 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                 <LogoutButton />
               </div>
             </div>
-            <div className="hidden lg:flex justify-end items-center h-14 px-4 gap-4">
-              {userProfile && (
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="font-semibold text-sm text-gray-800">{userProfile.full_name || userProfile.username}</p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {userProfile.user_type?.replace(/_/g, ' ') || 'Usuário'}
-                    </p>
+            <div className="hidden lg:flex justify-between items-center h-14 px-4">
+              <div>
+                {companySettings?.logo_url && (
+                  <a href="/dashboard/configuracoes">
+                    <img src={companySettings.logo_url} alt="Logo da empresa" className="h-8 w-auto" />
+                  </a>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {userProfile && (
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold text-sm text-gray-800">{userProfile.full_name || userProfile.username}</p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {userProfile.user_type?.replace(/_/g, ' ') || 'Usuário'}
+                      </p>
+                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={userProfile.avatar_url || ''} alt={userProfile.full_name || userProfile.username || ''} />
+                      <AvatarFallback>{fallbackInitials}</AvatarFallback>
+                    </Avatar>
                   </div>
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={userProfile.avatar_url || ''} alt={userProfile.full_name || userProfile.username || ''} />
-                    <AvatarFallback>{fallbackInitials}</AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
-              <LogoutButton />
+                )}
+                <LogoutButton />
+              </div>
             </div>
           </header>
           <div className="p-0 sm:p-2 lg:p-6">{children}</div>

@@ -148,6 +148,7 @@ const CompanySettings = () => {
       });
 
       fetchSettings();
+      window.dispatchEvent(new Event('companySettingsUpdated')); // Notify layout of the change
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -207,6 +208,11 @@ const CompanySettings = () => {
             </div>
             <div>
               <Label htmlFor="logo_url">Logo da Empresa</Label>
+               {formData.logo_url && (
+                <div className="mt-2 mb-4">
+                  <img src={formData.logo_url} alt="Pré-visualização do logo" className="h-20 w-auto object-contain rounded-md border p-2 bg-gray-50" />
+                </div>
+              )}
               <div className="flex space-x-2">
                 <Input
                   id="logo_url"
