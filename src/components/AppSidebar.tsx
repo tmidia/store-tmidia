@@ -32,76 +32,64 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
-    permission: "dashboard" as const,
   },
   {
     title: "Produtos",
     url: "/produtos",
     icon: Package,
-    permission: "produtos" as const,
   },
   {
     title: "Estoque",
     url: "/estoque",
     icon: Archive,
-    permission: "estoque" as const,
   },
   {
     title: "Fornecedores",
     url: "/fornecedores",
     icon: Building2,
-    permission: "fornecedores" as const,
   },
   {
     title: "Categorias",
     url: "/categorias",
     icon: Tag,
-    permission: "produtos" as const, // Categorias usa a mesma permissão de produtos
   },
   {
     title: "PDV",
     url: "/pdv",
     icon: ShoppingCart,
-    permission: "pdv" as const,
   },
   {
     title: "Financeiro",
     url: "/financeiro",
     icon: DollarSign,
-    permission: "financeiro" as const,
   },
   {
     title: "Despesas",
     url: "/despesas",
     icon: Receipt,
-    permission: "financeiro" as const, // Despesas usa a mesma permissão de financeiro
   },
   {
     title: "Relatórios",
     url: "/relatorios",
     icon: BarChart3,
-    permission: "relatorios" as const,
   },
   {
     title: "Usuários",
     url: "/usuarios",
     icon: Users,
-    permission: "usuarios" as const,
-    requireSuperAdmin: true,
   },
   {
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
-    permission: "configuracoes" as const,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
-  const { hasPermission, isSuperAdmin, userProfile, isLoading } = useRoleBasedAccess();
+  const { userProfile, isLoading } = useRoleBasedAccess();
 
-  // Se ainda está carregando as permissões, não mostrar o menu
+  // Se ainda está carregando as permissões, mostrar estado de carregamento
   if (isLoading || !userProfile) {
     return (
       <Sidebar className="border-r border-gray-200 bg-white">
@@ -125,17 +113,6 @@ export function AppSidebar() {
     );
   }
 
-  // Filtrar itens do menu baseado nas permissões do usuário
-  const visibleMenuItems = menuItems.filter(item => {
-    // Se o item requer superadmin, verificar se o usuário é superadmin
-    if (item.requireSuperAdmin) {
-      return isSuperAdmin();
-    }
-    
-    // Verificar se o usuário tem permissão para o módulo
-    return hasPermission(item.permission);
-  });
-
   return (
     <Sidebar className="border-r border-gray-200 bg-white">
       <SidebarHeader className="px-6 py-4 border-b border-gray-200">
@@ -157,7 +134,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visibleMenuItems.map((item) => (
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
