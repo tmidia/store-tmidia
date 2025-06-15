@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const chartConfig = {
   vendas: { label: "Vendas", color: "#3b82f6" },
@@ -31,38 +31,112 @@ export const SalesReport = () => {
   const [appliedDateFrom, setAppliedDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [appliedDateTo, setAppliedDateTo] = useState<Date>(endOfMonth(new Date()));
 
+  // Query para buscar TODAS as transações (para debug)
+  const { data: allTransactions } = useQuery({
+    queryKey: ['all-transactions-debug'],
+    queryFn: async () => {
+      console.log('🔍 Buscando TODAS as transações para debug...');
+      
+      const { data: allData, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erro ao buscar todas as transações:', error);
+        return [];
+      }
+
+      console.log('📊 TODAS as transações encontradas:', allData);
+      console.log('📊 Total de transações:', allData?.length || 0);
+      
+      // Filtrar apenas vendas para mostrar no debug
+      const vendas = allData?.filter(t => t.type === 'venda') || [];
+      console.log('💰 Transações de venda encontradas:', vendas);
+      console.log('💰 Total de vendas:', vendas.length);
+
+      return allData || [];
+    }
+  });
+
   const { data: salesData, isLoading, refetch } = useQuery({
     queryKey: ['sales-report', appliedDateFrom, appliedDateTo],
     queryFn: async () => {
-      console.log('Buscando vendas para o período:', {
-        inicio: format(appliedDateFrom, 'yyyy-MM-dd'),
-        fim: format(appliedDateTo, 'yyyy-MM-dd')
+      const startDate = format(appliedDateFrom, 'yyyy-MM-dd');
+      const endDate = format(appliedDateTo, 'yyyy-MM-dd');
+      
+      console.log('🔍 Buscando vendas para o período:', {
+        inicio: startDate,
+        fim: endDate,
+        appliedDateFrom,
+        appliedDateTo
       });
 
-      const { data: transactions, error } = await supabase
+      // Primeira consulta: buscar por tipo 'venda'
+      const { data: vendasType, error: vendasError } = await supabase
         .from('financial_transactions')
         .select('*')
         .eq('type', 'venda')
-        .gte('transaction_date', format(appliedDateFrom, 'yyyy-MM-dd'))
-        .lte('transaction_date', format(appliedDateTo, 'yyyy-MM-dd'))
+        .gte('transaction_date', startDate)
+        .lte('transaction_date', endDate)
         .order('transaction_date', { ascending: true });
 
-      if (error) {
-        console.error('Erro ao buscar transações:', error);
-        throw error;
+      console.log('💰 Resultado busca por type="venda":', vendasType);
+      
+      // Segunda consulta: buscar por descrição contendo 'Venda'
+      const { data: vendasDesc, error: descError } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .ilike('description', '%venda%')
+        .gte('transaction_date', startDate)
+        .lte('transaction_date', endDate)
+        .order('transaction_date', { ascending: true });
+
+      console.log('💰 Resultado busca por description contendo "venda":', vendasDesc);
+
+      // Terceira consulta: buscar TODAS as transações no período
+      const { data: allInPeriod, error: allError } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .gte('transaction_date', startDate)
+        .lte('transaction_date', endDate)
+        .order('transaction_date', { ascending: true });
+
+      console.log('📊 TODAS as transações no período:', allInPeriod);
+
+      if (vendasError) {
+        console.error('❌ Erro ao buscar vendas por tipo:', vendasError);
+      }
+      if (descError) {
+        console.error('❌ Erro ao buscar vendas por descrição:', descError);
+      }
+      if (allError) {
+        console.error('❌ Erro ao buscar todas as transações:', allError);
       }
 
-      console.log('Transações encontradas:', transactions);
+      // Usar a consulta que retornou mais resultados
+      let transactions = vendasType || [];
+      if (vendasDesc && vendasDesc.length > transactions.length) {
+        transactions = vendasDesc;
+      }
+
+      console.log('📊 Transações selecionadas para processamento:', transactions);
 
       if (!transactions || transactions.length === 0) {
-        console.log('Nenhuma transação encontrada para o período');
+        console.log('⚠️ Nenhuma transação encontrada para o período');
         return {
           chartData: [],
           totalVendas: 0,
           totalReceita: 0,
           ticketMedio: 0,
           paymentTotals: {},
-          transactions: []
+          transactions: [],
+          debugInfo: {
+            periodo: { startDate, endDate },
+            vendasType: vendasType?.length || 0,
+            vendasDesc: vendasDesc?.length || 0,
+            allInPeriod: allInPeriod?.length || 0
+          }
         };
       }
 
@@ -120,7 +194,13 @@ export const SalesReport = () => {
         totalReceita,
         ticketMedio,
         paymentTotals,
-        transactions
+        transactions,
+        debugInfo: {
+          periodo: { startDate, endDate },
+          vendasType: vendasType?.length || 0,
+          vendasDesc: vendasDesc?.length || 0,
+          allInPeriod: allInPeriod?.length || 0
+        }
       };
     }
   });
@@ -244,6 +324,54 @@ export const SalesReport = () => {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Debug Information */}
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="text-yellow-800">🔍 Informações de Debug</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <p><strong>Total de transações no sistema:</strong> {allTransactions?.length || 0}</p>
+            <p><strong>Vendas no sistema:</strong> {allTransactions?.filter(t => t.type === 'venda').length || 0}</p>
+            {salesData?.debugInfo && (
+              <>
+                <p><strong>Período consultado:</strong> {salesData.debugInfo.periodo.startDate} até {salesData.debugInfo.periodo.endDate}</p>
+                <p><strong>Vendas por tipo "venda":</strong> {salesData.debugInfo.vendasType}</p>
+                <p><strong>Vendas por descrição:</strong> {salesData.debugInfo.vendasDesc}</p>
+                <p><strong>Todas transações no período:</strong> {salesData.debugInfo.allInPeriod}</p>
+              </>
+            )}
+            
+            {/* Mostrar algumas transações recentes */}
+            {allTransactions && allTransactions.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium text-yellow-800 mb-2">Últimas 5 transações:</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allTransactions.slice(0, 5).map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{transaction.transaction_date}</TableCell>
+                        <TableCell>{transaction.type}</TableCell>
+                        <TableCell>{transaction.description}</TableCell>
+                        <TableCell>{formatCurrency(Number(transaction.amount))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
