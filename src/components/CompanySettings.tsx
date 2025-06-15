@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -213,7 +212,7 @@ const CompanySettings = () => {
                   <img src={formData.logo_url} alt="Pré-visualização do logo" className="h-20 w-auto object-contain rounded-md border p-2 bg-gray-50" />
                 </div>
               )}
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="logo_url"
                   value={formData.logo_url}
@@ -230,12 +229,13 @@ const CompanySettings = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  size="icon" 
+                  className="w-full sm:w-auto flex items-center justify-center gap-2"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
                   aria-label="Fazer upload do logo"
                 >
-                  {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+                  {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  <span>Fazer Upload</span>
                 </Button>
               </div>
             </div>

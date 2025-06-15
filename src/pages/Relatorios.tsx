@@ -19,7 +19,7 @@ const Relatorios = () => {
       </div>
 
       <Tabs defaultValue="vendas" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
           <TabsTrigger value="vendas" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Vendas</span>

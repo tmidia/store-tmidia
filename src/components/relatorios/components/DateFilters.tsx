@@ -47,7 +47,7 @@ export const DateFilters = ({
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="space-y-2">
+          <div className="space-y-2 w-full sm:w-auto">
             <label className="text-sm font-medium">Data Inicial</label>
             <Popover>
               <PopoverTrigger asChild>
@@ -62,7 +62,7 @@ export const DateFilters = ({
             </Popover>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-2 w-full sm:w-auto">
             <label className="text-sm font-medium">Data Final</label>
             <Popover>
               <PopoverTrigger asChild>
@@ -77,7 +77,7 @@ export const DateFilters = ({
             </Popover>
           </div>
 
-          <Button onClick={onSearch} className="flex items-center gap-2">
+          <Button onClick={onSearch} className="w-full sm:w-auto flex items-center gap-2">
             <Search className="w-4 h-4" />
             Buscar
           </Button>
@@ -85,7 +85,7 @@ export const DateFilters = ({
           <Button 
             onClick={onExportToPDF} 
             variant="outline" 
-            className="flex items-center gap-2"
+            className="w-full sm:w-auto flex items-center gap-2"
             disabled={!hasData}
           >
             <Download className="w-4 h-4" />
