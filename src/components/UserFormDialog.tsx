@@ -26,6 +26,7 @@ export const UserFormDialog = ({
   onEditingUserChange
 }: UserFormDialogProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
     full_name: '',
@@ -47,6 +48,7 @@ export const UserFormDialog = ({
       permissions: []
     });
     onEditingUserChange(null);
+    setIsLocalSubmitting(false);
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -77,15 +79,29 @@ export const UserFormDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isLocalSubmitting || isSubmitting) {
+      console.log('Submissão já em progresso, ignorando...');
+      return;
+    }
+
     try {
+      setIsLocalSubmitting(true);
       console.log('Submetendo formulário com dados:', formData);
+      
       await onSubmit(editingUser, formData);
+      
+      // Fechar dialog e resetar apenas após sucesso
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
       console.error('Erro no formulário:', error);
+      // Em caso de erro, manter o dialog aberto mas permitir nova tentativa
+      setIsLocalSubmitting(false);
     }
   };
+
+  const isCurrentlySubmitting = isSubmitting || isLocalSubmitting;
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
@@ -115,7 +131,7 @@ export const UserFormDialog = ({
           formData={formData}
           onFormDataChange={setFormData}
           onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
+          isSubmitting={isCurrentlySubmitting}
           canCreateUser={canCreateUser}
         />
 
@@ -125,18 +141,21 @@ export const UserFormDialog = ({
             variant="outline" 
             onClick={() => setIsDialogOpen(false)} 
             className="w-full sm:w-auto"
-            disabled={isSubmitting}
+            disabled={isCurrentlySubmitting}
           >
             Cancelar
           </Button>
           <Button 
             type="submit" 
-            disabled={isSubmitting || (!editingUser && !canCreateUser)}
+            disabled={isCurrentlySubmitting || (!editingUser && !canCreateUser)}
             className="w-full sm:w-auto"
             onClick={handleSubmit}
           >
-            {isSubmitting ? (
-              'Processando...'
+            {isCurrentlySubmitting ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Processando...</span>
+              </div>
             ) : (
               editingUser ? 'Atualizar' : 'Criar'
             )} Usuário

@@ -20,9 +20,16 @@ const UserManagement = () => {
   const handleFormSubmit = async (editingUser: UserWithPermissions | null, formData: any) => {
     setIsSubmitting(true);
     try {
+      console.log('Iniciando submissão do formulário...');
       await handleSubmit(editingUser, formData);
+      console.log('Submissão concluída com sucesso, limpando editingUser...');
       setEditingUser(null); // Limpar o usuário em edição após sucesso
+    } catch (error) {
+      console.error('Erro ao submeter formulário:', error);
+      // Manter editingUser para permitir correção
+      throw error; // Re-throw para que o UserFormDialog possa lidar com o erro
     } finally {
+      console.log('Finalizando submissão, setIsSubmitting(false)');
       setIsSubmitting(false);
     }
   };

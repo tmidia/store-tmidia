@@ -33,13 +33,17 @@ export const useUserManagement = () => {
 
   const handleSubmit = async (editingUser: UserWithPermissions | null, formData: UserFormData) => {
     try {
+      console.log('useUserManagement: Iniciando handleSubmit...');
+      
       if (editingUser) {
+        console.log('useUserManagement: Atualizando usuário existente...');
         await updateUser(editingUser, formData);
         toast({
           title: "Usuário atualizado",
           description: "As informações do usuário foram atualizadas com sucesso.",
         });
       } else {
+        console.log('useUserManagement: Criando novo usuário...');
         await createUser(formData);
         toast({
           title: "Usuário criado",
@@ -47,9 +51,11 @@ export const useUserManagement = () => {
         });
       }
 
+      console.log('useUserManagement: Recarregando lista de usuários...');
       await loadUsers();
+      console.log('useUserManagement: handleSubmit concluído com sucesso');
     } catch (error: any) {
-      console.error('Erro ao salvar usuário:', error);
+      console.error('useUserManagement: Erro ao salvar usuário:', error);
       
       const errorMessage = getUserErrorMessage(error);
 
