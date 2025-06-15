@@ -38,10 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setIsLoading(true);
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    // Always clear the local session state
     setUser(null);
     setSession(null);
     setIsLoading(false);
+
+    // If there was an error, but it's not "session missing", we re-throw it.
+    // This allows components to handle unexpected logout errors, while gracefully
+    // handling cases where the session was already gone.
+    if (error && error.message !== 'Auth session missing!') {
+      throw error;
+    }
   };
 
   return (
