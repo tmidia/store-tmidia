@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -37,7 +36,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
   const isEditing = !!expense;
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useFornecedores();
+  const { fornecedores: suppliers, loading: isLoadingSuppliers } = useFornecedores();
   const createExpenseMutation = useCreateExpense();
   const updateExpenseMutation = useUpdateExpense();
 
@@ -220,14 +219,17 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Fornecedor (Opcional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+              <Select
+                onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                value={field.value ?? 'none'}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={isLoadingSuppliers ? "Carregando..." : "Selecione um fornecedor"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {!isLoadingSuppliers && suppliers?.map(supplier => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.name}

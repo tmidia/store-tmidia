@@ -1,9 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type Expense = Tables<'accounts_payable'>;
+export type Expense = Tables<'accounts_payable'> & { notes?: string | null };
 export type ExpenseInsert = TablesInsert<'accounts_payable'>;
 export type ExpenseUpdate = TablesUpdate<'accounts_payable'>;
 
