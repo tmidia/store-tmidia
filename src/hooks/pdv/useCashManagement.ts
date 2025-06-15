@@ -116,27 +116,39 @@ export const useCashManagement = () => {
 
     try {
       const valorInicialStr = localStorage.getItem('valorInicialCaixa');
-      const dataAbertura = localStorage.getItem('dataAberturaCaixa');
       const valorInicial = valorInicialStr ? parseFloat(valorInicialStr) : 0;
-
-      if (!dataAbertura) {
-        toast({ title: "Erro de Dados", description: "Não foi possível encontrar a data de abertura do caixa. O cálculo pode estar incorreto.", variant: "destructive" });
-      }
       
-      const { data: vendas } = await supabase
+      const { data: transacoes, error: transacoesError } = await supabase
         .from('financial_transactions')
-        .select('amount')
-        .eq('type', 'venda')
-        .gte('created_at', dataAbertura || new Date(0).toISOString()); // Fallback to epoch if no date found
+        .select('type, amount')
+        .eq('reference_id', sessionId);
 
-      const totalVendas = vendas?.reduce((sum, venda) => sum + Number(venda.amount), 0) || 0;
-      const valorEsperado = valorInicial + totalVendas;
+      if (transacoesError) {
+        console.error('Erro ao buscar transações da sessão:', transacoesError);
+        toast({
+          title: "Erro ao buscar dados",
+          description: "Não foi possível carregar as transações da sessão para o fechamento.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const totalVendas = transacoes
+        ?.filter(t => t.type === 'venda')
+        .reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+
+      const totalSangrias = transacoes
+        ?.filter(t => t.type === 'sangria')
+        .reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+
+      const valorEsperado = valorInicial + totalVendas - totalSangrias;
       const diferenca = valorFinal - valorEsperado;
 
       console.log('💰 Fechando caixa:', {
         valorInicial,
         valorFinal,
         totalVendas,
+        totalSangrias,
         valorEsperado,
         diferenca,
         sessionId
@@ -195,10 +207,57 @@ export const useCashManagement = () => {
     }
   };
 
+  const realizarSangria = async (amount: number, reason: string) => {
+    if (!caixaAberto || !sessionId) {
+      toast({
+        title: 'Caixa Fechado',
+        description: 'É necessário abrir o caixa para realizar uma sangria.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('financial_transactions')
+        .insert({
+          type: 'sangria',
+          amount: amount,
+          description: reason,
+          reference_id: sessionId,
+          transaction_date: new Date().toISOString().split('T')[0],
+          notes: `Sangria do caixa (Sessão: ${sessionId})`
+        });
+
+      if (error) {
+        console.error('Erro ao realizar sangria:', error);
+        toast({
+          title: 'Erro ao realizar sangria',
+          description: 'Não foi possível registrar a sangria no banco de dados.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Sangria realizada com sucesso!',
+        description: `Valor: R$ ${amount.toFixed(2)}`,
+      });
+    } catch (error) {
+      console.error('Erro inesperado ao realizar sangria:', error);
+      toast({
+        title: 'Erro inesperado',
+        description: 'Ocorreu um erro ao tentar registrar a sangria.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return {
     caixaAberto,
     sessionId,
     abrirCaixa,
-    fecharCaixa
+    fecharCaixa,
+    realizarSangria,
   };
 };

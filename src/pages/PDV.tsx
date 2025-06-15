@@ -1,6 +1,6 @@
-
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MinusCircle } from 'lucide-react';
 import { useSystemParameters } from '@/hooks/useSystemParameters';
 import { usePDVLogic } from '@/hooks/usePDVLogic';
 import PDVHeader from '@/components/pdv/PDVHeader';
@@ -9,6 +9,8 @@ import ProductList from '@/components/pdv/ProductList';
 import ShoppingCart from '@/components/pdv/ShoppingCart';
 import PaymentPanel from '@/components/pdv/PaymentPanel';
 import ConsultationPanel from '@/components/pdv/ConsultationPanel';
+import { SangriaDialog } from '@/components/pdv/SangriaDialog';
+import { Button } from '@/components/ui/button';
 
 const PDV = () => {
   const { isPDVEnabled } = useSystemParameters();
@@ -34,8 +36,11 @@ const PDV = () => {
     alterarQuantidade,
     abrirCaixa,
     fecharCaixa,
+    realizarSangria,
     finalizarVenda
   } = usePDVLogic();
+
+  const [isSangriaDialogOpen, setIsSangriaDialogOpen] = useState(false);
 
   // Verificar se o PDV está habilitado
   if (!isPDVEnabled()) {
@@ -78,6 +83,17 @@ const PDV = () => {
                   <AlertTriangle className="w-5 h-5" />
                   <span className="font-medium">Caixa fechado - Vendas bloqueadas (Consulta de produtos permitida)</span>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {caixaAberto && (
+            <Card>
+              <CardContent className="p-4 flex items-center justify-end">
+                  <Button variant="secondary" onClick={() => setIsSangriaDialogOpen(true)}>
+                    <MinusCircle className="mr-2" />
+                    Realizar Sangria
+                  </Button>
               </CardContent>
             </Card>
           )}
@@ -131,6 +147,11 @@ const PDV = () => {
           </div>
         )}
       </div>
+      <SangriaDialog
+        isOpen={isSangriaDialogOpen}
+        onOpenChange={setIsSangriaDialogOpen}
+        onSubmit={realizarSangria}
+      />
     </div>
   );
 };

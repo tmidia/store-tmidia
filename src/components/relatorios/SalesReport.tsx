@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
@@ -45,6 +44,29 @@ export const SalesReport = () => {
       console.log('🏦 Sessões de caixa encontradas:', data);
       return data || [];
     }
+  });
+
+  const sessionIds = cashSessions?.map(s => s.id) ?? [];
+
+  const { data: sessionTransactions } = useQuery({
+    queryKey: ['session-transactions', sessionIds],
+    queryFn: async () => {
+      if (!sessionIds.length) {
+        return [];
+      }
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('reference_id, type, amount')
+        .in('reference_id', sessionIds)
+        .eq('type', 'sangria');
+
+      if (error) {
+        console.error('Erro ao buscar transações de sangria:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: sessionIds.length > 0,
   });
 
   // Query para buscar TODAS as transações (para debug)
@@ -256,7 +278,10 @@ export const SalesReport = () => {
         hasData={!!salesData}
       />
 
-      <CashSessionsCard cashSessions={cashSessions || []} />
+      <CashSessionsCard
+        cashSessions={cashSessions || []}
+        sessionTransactions={sessionTransactions || []}
+      />
 
       {isSuperAdmin() && (
         <DebugInfoCard 

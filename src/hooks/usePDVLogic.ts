@@ -14,7 +14,7 @@ export const usePDVLogic = () => {
   const [modoConsulta, setModoConsulta] = useState(false);
 
   const { produtos, loading } = useProducts();
-  const { caixaAberto, sessionId, abrirCaixa, fecharCaixa } = useCashManagement();
+  const { caixaAberto, sessionId, abrirCaixa, fecharCaixa, realizarSangria } = useCashManagement();
   const { carrinho, adicionarAoCarrinho, removerDoCarrinho, alterarQuantidade, limparCarrinho } = useCartManagement(produtos, caixaAberto);
   const { finalizarVenda: processarVenda } = useSalesProcessing();
 
@@ -63,6 +63,7 @@ export const usePDVLogic = () => {
     alterarQuantidade,
     abrirCaixa,
     fecharCaixa,
+    realizarSangria,
     finalizarVenda
   };
 };

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -15,11 +14,18 @@ interface CashSession {
   status: string;
 }
 
-interface CashSessionsCardProps {
-  cashSessions: CashSession[];
+interface SessionTransaction {
+  reference_id: string | null;
+  type: string;
+  amount: number;
 }
 
-export const CashSessionsCard = ({ cashSessions }: CashSessionsCardProps) => {
+interface CashSessionsCardProps {
+  cashSessions: CashSession[];
+  sessionTransactions: SessionTransaction[];
+}
+
+export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSessionsCardProps) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -45,14 +51,17 @@ export const CashSessionsCard = ({ cashSessions }: CashSessionsCardProps) => {
       <CardContent>
         <div className="space-y-4">
           {cashSessions.map((session) => {
-            const totalVendas = (session.status === 'closed' && session.expected_amount)
-              ? Number(session.expected_amount) - Number(session.opening_amount)
+            const sangriasDaSessao = sessionTransactions.filter(t => t.reference_id === session.id);
+            const totalSangrias = sangriasDaSessao.reduce((sum, s) => sum + Number(s.amount), 0);
+
+            const totalVendas = (session.status === 'closed' && session.expected_amount != null && session.opening_amount != null)
+              ? Number(session.expected_amount) - Number(session.opening_amount) + totalSangrias
               : 0;
 
             return (
               <Card key={session.id} className="border-l-4 border-l-blue-500">
                 <CardContent className="p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Abertura</p>
                       <p className="text-lg font-semibold">{formatCurrency(Number(session.opening_amount))}</p>
@@ -68,6 +77,12 @@ export const CashSessionsCard = ({ cashSessions }: CashSessionsCardProps) => {
                           <p className="text-lg font-semibold text-cyan-600">{formatCurrency(totalVendas)}</p>
                           <p className="text-xs text-gray-400">&nbsp;</p>
                         </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Sangrias</p>
+                          <p className="text-lg font-semibold text-orange-600">{formatCurrency(totalSangrias)}</p>
+                          <p className="text-xs text-gray-400">&nbsp;</p>
+                        </div>
+                        
                         <div>
                           <p className="text-sm font-medium text-gray-500">Fechamento</p>
                           <p className="text-lg font-semibold">{formatCurrency(Number(session.closing_amount))}</p>
@@ -95,7 +110,7 @@ export const CashSessionsCard = ({ cashSessions }: CashSessionsCardProps) => {
                     )}
                     
                     {session.status === 'open' && (
-                      <div className="lg:col-span-4 md:col-span-2 sm:col-span-1 flex items-center">
+                      <div className="lg:col-span-5 md:col-span-2 sm:col-span-1 flex items-center">
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full">
                           Caixa Aberto
                         </span>
