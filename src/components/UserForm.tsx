@@ -31,12 +31,20 @@ export const UserForm = ({
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
     const sanitizedValue = sanitizeHtml(value);
-    onFormDataChange({ ...formData, [field]: sanitizedValue });
+    const updatedFormData = { ...formData, [field]: sanitizedValue };
+    console.log(`Atualizando campo ${field} com valor:`, sanitizedValue);
+    onFormDataChange(updatedFormData);
     
     // Clear validation error when user starts typing
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  // Função específica para lidar com mudanças nas permissões
+  const handlePermissionsChange = (updatedFormData: UserFormData) => {
+    console.log('Atualizando permissões no UserForm:', updatedFormData.permissions);
+    onFormDataChange(updatedFormData);
   };
 
   const validateForm = () => {
@@ -97,6 +105,7 @@ export const UserForm = ({
       }
       
       console.log('Dados do formulário para submissão:', submitFormData);
+      console.log('Permissões sendo enviadas:', submitFormData.permissions);
       
       // Atualizar os dados do formulário com a nova senha se necessário
       if (editingUser && newPassword) {
@@ -149,8 +158,13 @@ export const UserForm = ({
 
       <UserPermissions
         formData={formData}
-        onFormDataChange={onFormDataChange}
+        onFormDataChange={handlePermissionsChange}
       />
+
+      {/* Debug das permissões - remover em produção */}
+      <div className="text-xs text-gray-400 p-2 bg-gray-50 rounded">
+        <strong>Debug - Permissões atuais:</strong> {JSON.stringify(formData.permissions)}
+      </div>
     </form>
   );
 };

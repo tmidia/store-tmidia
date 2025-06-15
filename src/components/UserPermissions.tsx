@@ -15,13 +15,13 @@ export const UserPermissions = ({
 }: UserPermissionsProps) => {
   const handlePermissionChange = (module: string, checked: boolean) => {
     console.log('Alterando permissão:', module, 'para:', checked);
-    console.log('Permissões atuais:', formData.permissions);
+    console.log('Permissões atuais antes da alteração:', formData.permissions);
     
     const updatedPermissions = checked 
       ? [...formData.permissions, module]
       : formData.permissions.filter(p => p !== module);
     
-    console.log('Novas permissões:', updatedPermissions);
+    console.log('Novas permissões após alteração:', updatedPermissions);
     
     onFormDataChange({
       ...formData,
@@ -30,16 +30,21 @@ export const UserPermissions = ({
   };
 
   const isPermissionChecked = (module: string): boolean => {
-    const isChecked = formData.permissions.includes(module);
-    console.log(`Verificando permissão ${module}:`, isChecked, 'em:', formData.permissions);
+    // Garantir que formData.permissions seja sempre um array
+    const permissions = Array.isArray(formData.permissions) ? formData.permissions : [];
+    const isChecked = permissions.includes(module);
+    console.log(`Verificando permissão ${module}:`, isChecked, 'em:', permissions);
     return isChecked;
   };
+
+  // Garantir que MODULES seja um array válido
+  const availableModules = Array.isArray(MODULES) ? MODULES : [];
 
   return (
     <div className="space-y-3">
       <Label className="text-sm font-medium">Permissões de Módulos</Label>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {MODULES.map(module => {
+        {availableModules.map(module => {
           const checked = isPermissionChecked(module);
           return (
             <div key={module} className="flex items-center space-x-2 p-2 border rounded">
@@ -54,6 +59,9 @@ export const UserPermissions = ({
             </div>
           );
         })}
+      </div>
+      <div className="text-xs text-gray-500 mt-2">
+        Permissões selecionadas: {formData.permissions.length}
       </div>
     </div>
   );

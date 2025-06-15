@@ -38,6 +38,7 @@ export const UserFormDialog = ({
   });
 
   const resetForm = () => {
+    console.log('Resetando formulário...');
     setFormData({
       username: '',
       full_name: '',
@@ -52,6 +53,7 @@ export const UserFormDialog = ({
   };
 
   const handleDialogOpenChange = (open: boolean) => {
+    console.log('Dialog mudou para:', open);
     setIsDialogOpen(open);
     if (!open) {
       resetForm();
@@ -62,17 +64,24 @@ export const UserFormDialog = ({
   React.useEffect(() => {
     if (editingUser) {
       console.log('Carregando dados do usuário para edição:', editingUser);
-      console.log('Permissões do usuário:', editingUser.permissions);
+      console.log('Permissões do usuário recebidas:', editingUser.permissions);
       
-      setFormData({
-        username: editingUser.username,
+      // Garantir que as permissões sejam sempre um array válido
+      const userPermissions = Array.isArray(editingUser.permissions) ? editingUser.permissions : [];
+      console.log('Permissões processadas para o formulário:', userPermissions);
+      
+      const newFormData = {
+        username: editingUser.username || '',
         full_name: editingUser.full_name || '',
         email: editingUser.email || '',
         password: '',
         cpf: editingUser.cpf || '',
         user_type: editingUser.user_type || 'vendedor',
-        permissions: Array.isArray(editingUser.permissions) ? editingUser.permissions : []
-      });
+        permissions: userPermissions
+      };
+      
+      console.log('Dados completos sendo carregados no formulário:', newFormData);
+      setFormData(newFormData);
       setIsDialogOpen(true);
     }
   }, [editingUser]);
