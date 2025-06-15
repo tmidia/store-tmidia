@@ -58,9 +58,9 @@ export default function Despesas() {
 
     return (
         <div className="p-4 sm:p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Despesas</h1>
-                <Button onClick={handleAddNew}>
+                <Button onClick={handleAddNew} className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Despesa
                 </Button>

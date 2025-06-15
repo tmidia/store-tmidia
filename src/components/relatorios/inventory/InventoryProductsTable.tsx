@@ -1,7 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { ResponsiveTable, ResponsiveTableRow } from '@/components/financeiro/ResponsiveTable';
 
 type Product = {
   id: string;
@@ -36,6 +37,8 @@ export const InventoryProductsTable = ({
   getStockStatus,
   formatCurrency
 }: InventoryProductsTableProps) => {
+  const headers = ["Produto", "Categoria", "Estoque", "Mínimo", "Status", "Valor Unitário", "Valor Total"];
+
   return (
     <Card>
       <CardHeader>
@@ -45,42 +48,50 @@ export const InventoryProductsTable = ({
       <CardContent>
         {isLoading ? (
           <LoadingSpinner />
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Estoque</TableHead>
-                  <TableHead>Mínimo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor Unitário</TableHead>
-                  <TableHead>Valor Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => {
-                  const status = getStockStatus(product);
-                  const totalValue = product.stock_quantity * (product.cost_price || 0);
-
-                  return (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.categories?.name || '-'}</TableCell>
-                      <TableCell>{product.stock_quantity}</TableCell>
-                      <TableCell>{product.minimum_stock}</TableCell>
-                      <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell>{formatCurrency(product.cost_price || 0)}</TableCell>
-                      <TableCell>{formatCurrency(totalValue)}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+        ) : products.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Nenhum produto encontrado no inventário.
           </div>
+        ) : (
+          <ResponsiveTable headers={headers}>
+            {products.map((product) => {
+              const status = getStockStatus(product);
+              const totalValue = product.stock_quantity * (product.cost_price || 0);
+
+              return (
+                <ResponsiveTableRow
+                  key={product.id}
+                  mobileContent={
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <p className="font-medium">{product.name}</p>
+                        <Badge variant={status.variant} className="flex-shrink-0">{status.label}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                          <div><strong>Categoria:</strong> {product.categories?.name || '-'}</div>
+                          <div><strong>Estoque:</strong> {product.stock_quantity}</div>
+                          <div><strong>Mínimo:</strong> {product.minimum_stock}</div>
+                          <div><strong>Unitário:</strong> {formatCurrency(product.cost_price || 0)}</div>
+                      </div>
+                      <div className="flex justify-end items-center mt-2 border-t pt-2">
+                        <p className="text-right"><span className="font-semibold text-base">Total: {formatCurrency(totalValue)}</span></p>
+                      </div>
+                    </div>
+                  }
+                >
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.categories?.name || '-'}</TableCell>
+                  <TableCell>{product.stock_quantity}</TableCell>
+                  <TableCell>{product.minimum_stock}</TableCell>
+                  <TableCell>
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(product.cost_price || 0)}</TableCell>
+                  <TableCell>{formatCurrency(totalValue)}</TableCell>
+                </ResponsiveTableRow>
+              );
+            })}
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>
