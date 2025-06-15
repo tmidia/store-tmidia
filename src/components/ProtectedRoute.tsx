@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +32,11 @@ const ProtectedRoute = ({
   
   const navigate = useNavigate();
 
-  console.log('🔒 [ProtectedRoute] Estado:', { isLoading, userProfile: !!userProfile });
+  // Extra: debug na checagem de permissão
+  console.log('[ProtectedRoute] isLoading:', isLoading,
+    '\nuserProfile:', userProfile,
+    '\nrequiredRole:', requiredRole,
+    '\nrequiredPermission:', requiredPermission);
 
   if (isLoading) {
     return (
@@ -44,7 +47,7 @@ const ProtectedRoute = ({
   }
 
   if (!userProfile) {
-    console.log('❌ [ProtectedRoute] Sem perfil de usuário');
+    console.log('[ProtectedRoute] Sem perfil de usuário');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -74,7 +77,7 @@ const ProtectedRoute = ({
 
   // Check for super admin requirement
   if (requireSuperAdmin && !isSuperAdmin()) {
-    console.log('❌ [ProtectedRoute] Requer superadmin');
+    console.log('[ProtectedRoute] Requer superadmin');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -104,7 +107,7 @@ const ProtectedRoute = ({
 
   // Check for specific role requirement
   if (requiredRole && !hasRole(requiredRole)) {
-    console.log('❌ [ProtectedRoute] Papel insuficiente');
+    console.log('[ProtectedRoute] Papel insuficiente');
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -134,7 +137,7 @@ const ProtectedRoute = ({
 
   // Check for specific permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
-    console.log('❌ [ProtectedRoute] Permissão insuficiente:', requiredPermission);
+    console.log('[ProtectedRoute] Permissão insuficiente:', requiredPermission, 'User perms:', userProfile.permissions);
     return (
       <div className="flex items-center justify-center min-h-96 p-4">
         <Card className="max-w-md mx-auto">
@@ -162,7 +165,7 @@ const ProtectedRoute = ({
     );
   }
 
-  console.log('✅ [ProtectedRoute] Acesso liberado');
+  console.log('[ProtectedRoute] Acesso liberado!');
   return <>{children}</>;
 };
 

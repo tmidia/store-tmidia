@@ -55,28 +55,45 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
           setIsLoading(false);
           return;
         }
-        const { data: permissions } = await supabase
+        const { data: permissions, error: permError } = await supabase
           .from('user_permissions')
           .select('module')
           .eq('user_id', user.id);
+
+        const loadedPerms = permissions?.map(p => p.module) || [];
+        // Debug: mostrar as permissões lidas do banco
+        console.log('[RoleBasedAccess] Perfil cargado', {
+          id: profile.id,
+          user_type: profile.user_type,
+          is_active: profile.is_active,
+          permissions: loadedPerms
+        });
 
         setUserProfile({
           id: profile.id,
           user_type: profile.user_type,
           is_active: profile.is_active,
-          permissions: permissions?.map(p => p.module) || []
+          permissions: loadedPerms
         });
         setIsLoading(false);
-      } catch {
+      } catch (err) {
         setUserProfile(null);
         setIsLoading(false);
+        console.error('[RoleBasedAccess] Erro carregando perfil:', err);
       }
     })();
   }, [user]);
 
-  const hasRole = (role: UserType): boolean => userProfile?.user_type === role;
-  const hasPermission = (module: ModuleName): boolean =>
-    userProfile?.permissions.includes(module) || hasRole('superadmin');
+  const hasRole = (role: UserType): boolean => {
+    const result = userProfile?.user_type === role;
+    console.log('[RoleBasedAccess] hasRole', { want: role, user_type: userProfile?.user_type, result });
+    return result;
+  };
+  const hasPermission = (module: ModuleName): boolean => {
+    const has = userProfile?.permissions.includes(module) || hasRole('superadmin');
+    console.log('[RoleBasedAccess] hasPermission', { module, perms: userProfile?.permissions, user_type: userProfile?.user_type, has });
+    return has;
+  };
   const isSuperAdmin = () => hasRole('superadmin');
   const isAdmin = () => hasRole('superadmin') || hasRole('gerente');
   const canAccessUserManagement = () => isSuperAdmin();
