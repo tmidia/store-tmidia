@@ -1,4 +1,3 @@
-
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { MODULES } from '@/constants/modules';
@@ -13,16 +12,17 @@ export const UserPermissions = ({
   formData,
   onFormDataChange
 }: UserPermissionsProps) => {
+  // Garante que só módulos válidos serão exibidos e manipulados
+  const availableModules = Array.isArray(MODULES) ? MODULES : [];
+
   const handlePermissionChange = (module: string, checked: boolean) => {
-    console.log('Alterando permissão:', module, 'para:', checked);
-    console.log('Permissões atuais antes da alteração:', formData.permissions);
-    
+    // Não salva permissão inválida jamais
+    if (!availableModules.includes(module as any)) return;
+
     const updatedPermissions = checked 
-      ? [...formData.permissions, module]
+      ? Array.from(new Set([...formData.permissions, module]))
       : formData.permissions.filter(p => p !== module);
-    
-    console.log('Novas permissões após alteração:', updatedPermissions);
-    
+
     onFormDataChange({
       ...formData,
       permissions: updatedPermissions
@@ -30,15 +30,9 @@ export const UserPermissions = ({
   };
 
   const isPermissionChecked = (module: string): boolean => {
-    // Garantir que formData.permissions seja sempre um array
     const permissions = Array.isArray(formData.permissions) ? formData.permissions : [];
-    const isChecked = permissions.includes(module);
-    console.log(`Verificando permissão ${module}:`, isChecked, 'em:', permissions);
-    return isChecked;
+    return permissions.includes(module);
   };
-
-  // Garantir que MODULES seja um array válido
-  const availableModules = Array.isArray(MODULES) ? MODULES : [];
 
   return (
     <div className="space-y-3">

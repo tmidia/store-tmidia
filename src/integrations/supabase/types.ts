@@ -589,6 +589,7 @@ export type Database = {
         | "fornecedores"
         | "configuracoes"
         | "usuarios"
+        | "categorias"
       system_module:
         | "produtos"
         | "categorias"
@@ -735,6 +736,7 @@ export const Constants = {
         "fornecedores",
         "configuracoes",
         "usuarios",
+        "categorias",
       ],
       system_module: [
         "produtos",
