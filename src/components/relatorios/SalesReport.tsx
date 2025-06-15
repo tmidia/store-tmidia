@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -21,16 +21,18 @@ const chartConfig = {
 export const SalesReport = () => {
   const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
+  const [appliedDateFrom, setAppliedDateFrom] = useState<Date>(startOfMonth(new Date()));
+  const [appliedDateTo, setAppliedDateTo] = useState<Date>(endOfMonth(new Date()));
 
-  const { data: salesData, isLoading } = useQuery({
-    queryKey: ['sales-report', dateFrom, dateTo],
+  const { data: salesData, isLoading, refetch } = useQuery({
+    queryKey: ['sales-report', appliedDateFrom, appliedDateTo],
     queryFn: async () => {
       const { data: transactions, error } = await supabase
         .from('financial_transactions')
         .select('*')
         .eq('type', 'venda')
-        .gte('transaction_date', format(dateFrom, 'yyyy-MM-dd'))
-        .lte('transaction_date', format(dateTo, 'yyyy-MM-dd'))
+        .gte('transaction_date', format(appliedDateFrom, 'yyyy-MM-dd'))
+        .lte('transaction_date', format(appliedDateTo, 'yyyy-MM-dd'))
         .order('transaction_date', { ascending: true });
 
       if (error) throw error;
@@ -65,9 +67,20 @@ export const SalesReport = () => {
     }
   });
 
+  const handleSearch = () => {
+    setAppliedDateFrom(dateFrom);
+    setAppliedDateTo(dateTo);
+  };
+
   const exportToPDF = () => {
     // Implementação futura de exportação para PDF
-    console.log('Exportando relatório de vendas para PDF...');
+    console.log('Exportando relatório de vendas para PDF...', {
+      periodo: {
+        inicio: format(appliedDateFrom, 'dd/MM/yyyy'),
+        fim: format(appliedDateTo, 'dd/MM/yyyy')
+      },
+      dados: salesData
+    });
   };
 
   const formatCurrency = (value: number) => {
@@ -86,6 +99,9 @@ export const SalesReport = () => {
             <CalendarIcon className="w-5 h-5" />
             Período de Análise
           </CardTitle>
+          <CardDescription>
+            Selecione o período desejado e clique em "Buscar" para aplicar os filtros
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -119,11 +135,29 @@ export const SalesReport = () => {
               </Popover>
             </div>
 
-            <Button onClick={exportToPDF} variant="outline" className="flex items-center gap-2">
+            <Button onClick={handleSearch} className="flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Buscar
+            </Button>
+
+            <Button 
+              onClick={exportToPDF} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={!salesData}
+            >
               <Download className="w-4 h-4" />
               Exportar PDF
             </Button>
           </div>
+
+          {appliedDateFrom && appliedDateTo && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Período aplicado:</strong> {format(appliedDateFrom, 'dd/MM/yyyy', { locale: ptBR })} até {format(appliedDateTo, 'dd/MM/yyyy', { locale: ptBR })}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

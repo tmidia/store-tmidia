@@ -1,15 +1,18 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Package, AlertTriangle, TrendingDown, BarChart3 } from 'lucide-react';
+import { Download, Package, AlertTriangle, TrendingDown, BarChart3, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
 export const InventoryReport = () => {
-  const { data: inventoryData, isLoading } = useQuery({
-    queryKey: ['inventory-report'],
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { data: inventoryData, isLoading, refetch } = useQuery({
+    queryKey: ['inventory-report', refreshTrigger],
     queryFn: async () => {
       const { data: products, error } = await supabase
         .from('products')
@@ -49,6 +52,16 @@ export const InventoryReport = () => {
     }
   });
 
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const exportToPDF = () => {
+    console.log('Exportando relatório de estoque para PDF...', {
+      dados: inventoryData
+    });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -67,17 +80,36 @@ export const InventoryReport = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header com botão de exportação */}
+      {/* Header com botões de ação */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold">Relatório de Estoque</h2>
           <p className="text-sm text-muted-foreground">Análise completa do inventário</p>
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Exportar PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
+            <Search className="w-4 h-4" />
+            Atualizar Dados
+          </Button>
+          <Button 
+            onClick={exportToPDF}
+            variant="outline" 
+            className="flex items-center gap-2"
+            disabled={!inventoryData}
+          >
+            <Download className="w-4 h-4" />
+            Exportar PDF
+          </Button>
+        </div>
       </div>
+
+      {inventoryData && (
+        <div className="p-3 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-700">
+            <strong>Dados atualizados:</strong> {new Date().toLocaleString('pt-BR')}
+          </p>
+        </div>
+      )}
 
       {/* KPIs de Estoque */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
