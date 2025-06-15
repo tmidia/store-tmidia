@@ -63,6 +63,13 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
 
   const selectedCategoryName = value ? categories?.find(c => c.name === value)?.name : "Selecione ou crie uma categoria";
 
+  const filteredCategories = React.useMemo(() =>
+    categories?.filter(c => c.name.toLowerCase().includes(searchValue.toLowerCase())) ?? [],
+    [categories, searchValue]
+  );
+  
+  const canCreate = !isLoading && searchValue.trim().length > 0 && !filteredCategories.some(c => c.name.toLowerCase() === searchValue.trim().toLowerCase());
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -85,27 +92,17 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
           />
           <CommandList>
             <CommandEmpty>
-                {isLoading ? 'Carregando...' : (
-                    <CommandItem
-                        onSelect={handleCreateCategory}
-                        className="cursor-pointer"
-                        disabled={createCategoryMutation.isPending}
-                    >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        {createCategoryMutation.isPending ? 'Criando...' : `Criar "${searchValue}"`}
-                    </CommandItem>
-                )}
+                {isLoading ? 'Carregando...' : 'Nenhuma categoria encontrada.'}
             </CommandEmpty>
             <CommandGroup>
-              {categories
-                ?.filter(c => c.name.toLowerCase().includes(searchValue.toLowerCase()))
-                .map((category) => (
+              {filteredCategories.map((category) => (
                 <CommandItem
                   key={category.id}
                   value={category.name}
                   onSelect={() => {
                     onChange(category.name);
                     setOpen(false);
+                    setSearchValue("");
                   }}
                 >
                   <Check
@@ -118,6 +115,18 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
                 </CommandItem>
               ))}
             </CommandGroup>
+            {canCreate && (
+              <CommandGroup>
+                 <CommandItem
+                    onSelect={handleCreateCategory}
+                    className="cursor-pointer"
+                    disabled={createCategoryMutation.isPending}
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {createCategoryMutation.isPending ? 'Criando...' : `Criar "${searchValue.trim()}"`}
+                </CommandItem>
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
