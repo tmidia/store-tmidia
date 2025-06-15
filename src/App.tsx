@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -27,6 +26,7 @@ import SystemParameters from "./components/SystemParameters";
 import IntegrationsSettings from "./components/IntegrationsSettings";
 import LogoutButton from "./components/LogoutButton";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Despesas from "./pages/Despesas";
 
 const queryClient = new QueryClient();
 
@@ -144,10 +144,7 @@ const App = () => (
                 <AuthWrapper>
                   <ProtectedRoute requiredPermission="financeiro">
                     <MainLayout>
-                      <div className="p-6">
-                        <h1 className="text-3xl font-bold text-gray-900">Despesas</h1>
-                        <p className="text-gray-600 mt-1">Em desenvolvimento...</p>
-                      </div>
+                      <Despesas />
                     </MainLayout>
                   </ProtectedRoute>
                 </AuthWrapper>
