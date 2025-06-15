@@ -44,6 +44,10 @@ const PaymentPanel = ({
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const { isReceiptPrintingEnabled, isManualDiscountAllowed } = useSystemParameters();
 
+  const classicCard = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:text-black";
+  const classicInput = "group-[.pdv-classic]:bg-white group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-600 group-[.pdv-classic]:border-l-slate-600 group-[.pdv-classic]:border-b-slate-200 group-[.pdv-classic]:border-r-slate-200 group-[.pdv-classic]:shadow-inner group-[.pdv-classic]:rounded-none group-[.pdv-classic]:text-black";
+  const classicButton = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200";
+  
   const formasPagamento = [
     { value: 'dinheiro', label: 'Dinheiro', icon: Banknote },
     { value: 'pix', label: 'PIX', icon: QrCode },
@@ -101,7 +105,7 @@ const PaymentPanel = ({
 
   return (
     <>
-      <Card className="border-0 shadow-md bg-white">
+      <Card className={`border-0 shadow-md bg-white ${classicCard}`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold">Resumo da Venda</CardTitle>
         </CardHeader>
@@ -118,7 +122,7 @@ const PaymentPanel = ({
                 type="number"
                 value={desconto}
                 onChange={(e) => onDescontoChange(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                className="w-20 h-8"
+                className={`w-20 h-8 ${classicInput}`}
                 min="0"
                 max="100"
                 disabled={!caixaAberto || !isManualDiscountAllowed()}
@@ -136,17 +140,17 @@ const PaymentPanel = ({
             
             <div className="flex justify-between text-lg font-semibold">
               <span>Total:</span>
-              <span className="text-primary">R$ {total.toFixed(2)}</span>
+              <span className="text-primary group-[.pdv-classic]:text-blue-800">R$ {total.toFixed(2)}</span>
             </div>
           </div>
 
           <div className="space-y-3">
             <label className="text-sm font-medium">Forma de Pagamento:</label>
             <Select value={formaPagamento} onValueChange={onFormaPagamentoChange} disabled={!caixaAberto}>
-              <SelectTrigger>
+              <SelectTrigger className={classicInput}>
                 <SelectValue placeholder="Selecione a forma de pagamento" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="group-[.pdv-classic]:bg-slate-300">
                 {formasPagamento.map(forma => (
                   <SelectItem key={forma.value} value={forma.value}>
                     <div className="flex items-center space-x-2">
@@ -168,6 +172,7 @@ const PaymentPanel = ({
                   onChange={(e) => onValorRecebidoChange(e.target.value)}
                   placeholder="0,00"
                   disabled={!caixaAberto}
+                  className={classicInput}
                 />
                 {valorRecebido && parseFloat(valorRecebido) >= total && (
                   <div className="flex justify-between text-green-600">
@@ -181,7 +186,7 @@ const PaymentPanel = ({
 
           <Button 
             onClick={handleFinalizarVenda}
-            className="w-full h-12 bg-primary hover:bg-blue-dark text-lg font-semibold"
+            className={`w-full h-12 bg-primary hover:bg-blue-dark text-lg font-semibold ${classicButton} group-[.pdv-classic]:!bg-green-600 group-[.pdv-classic]:!text-white`}
             disabled={carrinho.length === 0 || !caixaAberto}
           >
             <DollarSign className="w-5 h-5 mr-2" />

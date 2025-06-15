@@ -1,8 +1,10 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, MinusCircle } from 'lucide-react';
 import { useSystemParameters } from '@/hooks/useSystemParameters';
 import { usePDVLogic } from '@/hooks/usePDVLogic';
+import { usePdvTheme } from '@/hooks/usePdvTheme';
 import PDVHeader from '@/components/pdv/PDVHeader';
 import ProductSearch from '@/components/pdv/ProductSearch';
 import ProductList from '@/components/pdv/ProductList';
@@ -39,7 +41,7 @@ const PDV = () => {
     realizarSangria,
     finalizarVenda
   } = usePDVLogic();
-
+  const { theme, toggleTheme } = usePdvTheme();
   const [isSangriaDialogOpen, setIsSangriaDialogOpen] = useState(false);
 
   // Verificar se o PDV está habilitado
@@ -66,7 +68,7 @@ const PDV = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className={`p-6 min-h-screen group ${theme} group-[.pdv-classic]:bg-slate-400 group-[.pdv-classic]:font-sans`}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Produtos */}
         <div className="lg:col-span-2 space-y-6">
@@ -74,12 +76,13 @@ const PDV = () => {
             caixaAberto={caixaAberto}
             onAbrirCaixa={abrirCaixa}
             onFecharCaixa={fecharCaixa}
+            onToggleTheme={toggleTheme}
           />
 
           {!caixaAberto && (
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-red-200 bg-red-50 group-[.pdv-classic]:bg-red-200 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-red-400 group-[.pdv-classic]:shadow-none">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-red-700">
+                <div className="flex items-center gap-2 text-red-700 group-[.pdv-classic]:text-red-900">
                   <AlertTriangle className="w-5 h-5" />
                   <span className="font-medium">Caixa fechado - Vendas bloqueadas (Consulta de produtos permitida)</span>
                 </div>
@@ -88,9 +91,13 @@ const PDV = () => {
           )}
 
           {caixaAberto && (
-            <Card>
-              <CardContent className="p-4 flex items-center justify-end">
-                  <Button variant="secondary" onClick={() => setIsSangriaDialogOpen(true)}>
+            <Card className="group-[.pdv-classic]:bg-transparent group-[.pdv-classic]:border-none group-[.pdv-classic]:shadow-none">
+              <CardContent className="p-4 flex items-center justify-end group-[.pdv-classic]:p-0">
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => setIsSangriaDialogOpen(true)}
+                    className="group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200"
+                  >
                     <MinusCircle className="mr-2" />
                     Realizar Sangria
                   </Button>
