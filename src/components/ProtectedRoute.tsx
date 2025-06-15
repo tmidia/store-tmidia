@@ -1,7 +1,10 @@
+
 import { ReactNode } from 'react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Shield, AlertTriangle, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserType = Database['public']['Enums']['user_type'];
@@ -27,6 +30,8 @@ const ProtectedRoute = ({
     hasPermission, 
     isSuperAdmin 
   } = useRoleBasedAccess();
+  
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -38,68 +43,116 @@ const ProtectedRoute = ({
 
   if (!userProfile) {
     return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Shield className="w-5 h-5 text-red-500" />
-            <CardTitle className="text-red-600">Acesso Negado</CardTitle>
-          </div>
-          <CardDescription>
-            Você precisa estar logado para acessar esta página.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center min-h-96 p-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-red-500" />
+              <CardTitle className="text-red-600">Acesso Negado</CardTitle>
+            </div>
+            <CardDescription>
+              Você precisa estar logado para acessar esta página.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="w-full"
+              variant="outline"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Check for super admin requirement
   if (requireSuperAdmin && !isSuperAdmin()) {
     return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
-          </div>
-          <CardDescription>
-            Apenas superadministradores podem acessar esta funcionalidade.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center min-h-96 p-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
+            </div>
+            <CardDescription>
+              Apenas superadministradores podem acessar esta funcionalidade.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="w-full"
+              variant="outline"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Check for specific role requirement
   if (requiredRole && !hasRole(requiredRole)) {
     return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
-          </div>
-          <CardDescription>
-            Você não tem o nível de acesso necessário para esta página.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center min-h-96 p-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
+            </div>
+            <CardDescription>
+              Você não tem o nível de acesso necessário para esta página.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="w-full"
+              variant="outline"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Check for specific permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <CardTitle className="text-red-600">Permissão Insuficiente</CardTitle>
-          </div>
-          <CardDescription>
-            Você não tem permissão para acessar o módulo: {requiredPermission}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center min-h-96 p-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <CardTitle className="text-red-600">Permissão Insuficiente</CardTitle>
+            </div>
+            <CardDescription>
+              Você não tem permissão para acessar o módulo: {requiredPermission}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="w-full"
+              variant="outline"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
