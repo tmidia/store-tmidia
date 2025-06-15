@@ -1,8 +1,9 @@
+
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateExpense, useUpdateExpense, type ExpenseWithSupplier, type ExpenseInsert } from '@/hooks/useExpenses';
+import { useCreateExpense, useUpdateExpense, type ExpenseWithSupplier } from '@/hooks/useExpenses';
 import { useFornecedores } from '@/hooks/useFornecedores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { CategoryCombobox } from './CategoryCombobox';
 
 const expenseSchema = z.object({
   description: z.string().min(3, { message: 'A descrição deve ter pelo menos 3 caracteres.' }),
@@ -87,18 +89,27 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
       supplier_id: data.supplier_id || null,
     };
 
-    const mutation = isEditing ? updateExpenseMutation : createExpenseMutation;
-    const mutationData = isEditing ? { id: expense.id, ...submissionData } : submissionData;
-
-    mutation.mutate(mutationData as any, {
-      onSuccess: () => {
-        toast.success(`Despesa ${isEditing ? 'atualizada' : 'criada'} com sucesso!`);
-        onSuccess();
-      },
-      onError: (error) => {
-        toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} despesa: ${error.message}`);
-      }
-    });
+    if (isEditing && expense) {
+        updateExpenseMutation.mutate({ id: expense.id, ...submissionData }, {
+            onSuccess: () => {
+                toast.success(`Despesa atualizada com sucesso!`);
+                onSuccess();
+            },
+            onError: (error: any) => {
+                toast.error(`Erro ao atualizar despesa: ${error.message}`);
+            }
+        });
+    } else {
+        createExpenseMutation.mutate(submissionData, {
+            onSuccess: () => {
+                toast.success(`Despesa criada com sucesso!`);
+                onSuccess();
+            },
+            onError: (error: any) => {
+                toast.error(`Erro ao criar despesa: ${error.message}`);
+            }
+        });
+    }
   };
   
   const isLoading = createExpenseMutation.isPending || updateExpenseMutation.isPending;
@@ -205,7 +216,10 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Despesas Fixas" {...field} />
+                    <CategoryCombobox
+                        value={field.value}
+                        onChange={field.onChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
