@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -18,7 +17,7 @@ interface RoleBasedAccessContextProps {
   userProfile: UserProfile | null;
   isLoading: boolean;
   hasRole: (role: UserType) => boolean;
-  hasPermission: (module: ModuleName) => boolean;
+  hasPermission: (module: string) => boolean;
   isSuperAdmin: () => boolean;
   isAdmin: () => boolean;
   canAccessUserManagement: () => boolean;
@@ -60,8 +59,9 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
           .select('module')
           .eq('user_id', user.id);
 
-        const loadedPerms = permissions?.map(p => p.module) || [];
-        // Debug: mostrar as permissões lidas do banco
+        // Corrigir leitura: array sempre de string
+        const loadedPerms = permissions?.map(p => typeof p.module === 'string' ? p.module : String(p.module)) || [];
+        // Debug extra:
         console.log('[RoleBasedAccess] Perfil cargado', {
           id: profile.id,
           user_type: profile.user_type,
@@ -89,11 +89,18 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
     console.log('[RoleBasedAccess] hasRole', { want: role, user_type: userProfile?.user_type, result });
     return result;
   };
-  const hasPermission = (module: ModuleName): boolean => {
-    const has = userProfile?.permissions.includes(module) || hasRole('superadmin');
-    console.log('[RoleBasedAccess] hasPermission', { module, perms: userProfile?.permissions, user_type: userProfile?.user_type, has });
+
+  // AJUSTE: permitir string simples e tolerância a tipos
+  const hasPermission = (module: string): boolean => {
+    if (!userProfile) return false;
+    const plainModule = typeof module === 'string' ? module : String(module);
+    // usar includes de string para comparar
+    const permsArr: string[] = Array.isArray(userProfile.permissions) ? userProfile.permissions : [];
+    const has = permsArr.includes(plainModule) || hasRole('superadmin');
+    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has });
     return has;
   };
+
   const isSuperAdmin = () => hasRole('superadmin');
   const isAdmin = () => hasRole('superadmin') || hasRole('gerente');
   const canAccessUserManagement = () => isSuperAdmin();
