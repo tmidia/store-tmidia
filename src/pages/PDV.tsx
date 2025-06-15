@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useProducts } from '@/hooks/useProducts';
+import { useSystemParameters } from '@/hooks/useSystemParameters';
 import PDVHeader from '@/components/pdv/PDVHeader';
 import ProductSearch from '@/components/pdv/ProductSearch';
 import ProductList from '@/components/pdv/ProductList';
@@ -23,6 +23,22 @@ const PDV = () => {
   const [modoConsulta, setModoConsulta] = useState(false);
 
   const { produtos, loading } = useProducts();
+  const { isPDVEnabled } = useSystemParameters();
+
+  // Verificar se o PDV está habilitado
+  if (!isPDVEnabled()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-6 text-center">
+          <CardContent>
+            <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">PDV Desabilitado</h2>
+            <p className="text-gray-600">O módulo PDV está desabilitado nas configurações do sistema.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Verificar se o caixa está aberto ao carregar a página
   useEffect(() => {

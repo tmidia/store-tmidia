@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,8 @@ const SystemParameters = () => {
     allow_manual_discount: true,
     show_low_stock_alert: true,
     show_due_accounts: true,
-    show_daily_report: true
+    show_daily_report: true,
+    enable_receipt_printing: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -43,7 +43,8 @@ const SystemParameters = () => {
           allow_manual_discount: data.allow_manual_discount ?? true,
           show_low_stock_alert: data.show_low_stock_alert ?? true,
           show_due_accounts: data.show_due_accounts ?? true,
-          show_daily_report: data.show_daily_report ?? true
+          show_daily_report: data.show_daily_report ?? true,
+          enable_receipt_printing: data.enable_receipt_printing ?? false
         });
       }
     } catch (error) {
@@ -175,6 +176,18 @@ const SystemParameters = () => {
                 id="show_daily_report"
                 checked={formData.show_daily_report}
                 onCheckedChange={(value) => handleSwitchChange('show_daily_report', value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="enable_receipt_printing">Habilitar impressão de cupom</Label>
+                <p className="text-sm text-gray-500">Permite imprimir cupom fiscal após finalizar a venda</p>
+              </div>
+              <Switch
+                id="enable_receipt_printing"
+                checked={formData.enable_receipt_printing}
+                onCheckedChange={(value) => handleSwitchChange('enable_receipt_printing', value)}
               />
             </div>
           </div>
