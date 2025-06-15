@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useProducts } from '@/hooks/useProducts';
@@ -22,13 +21,18 @@ export const usePDVLogic = () => {
   const [clienteNome, setClienteNome] = useState('');
   const [caixaAberto, setCaixaAberto] = useState(false);
   const [modoConsulta, setModoConsulta] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const { produtos, loading } = useProducts();
 
   // Verificar se o caixa está aberto ao carregar a página
   useEffect(() => {
     const caixaStatus = localStorage.getItem('caixaAberto');
+    const sessionIdLocal = localStorage.getItem('sessionId');
     setCaixaAberto(caixaStatus === 'true');
+    if (sessionIdLocal) {
+      setSessionId(sessionIdLocal);
+    }
   }, []);
 
   const adicionarAoCarrinho = (produto: any) => {
@@ -94,33 +98,119 @@ export const usePDVLogic = () => {
     ));
   };
 
-  const abrirCaixa = () => {
+  const abrirCaixa = async () => {
     const valorInicial = prompt("Digite o valor inicial do caixa:");
     if (valorInicial && !isNaN(parseFloat(valorInicial))) {
-      localStorage.setItem('caixaAberto', 'true');
-      localStorage.setItem('valorInicialCaixa', valorInicial);
-      localStorage.setItem('dataAberturaCaixa', new Date().toISOString());
-      setCaixaAberto(true);
-      
-      toast({
-        title: "Caixa aberto!",
-        description: `Valor inicial: R$ ${parseFloat(valorInicial).toFixed(2)}`,
-      });
+      try {
+        // Salvar sessão de caixa no banco de dados
+        const { data, error } = await supabase
+          .from('cash_sessions')
+          .insert({
+            opening_amount: parseFloat(valorInicial),
+            status: 'open'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Erro ao abrir caixa:', error);
+          toast({
+            title: "Erro ao abrir caixa",
+            description: "Não foi possível registrar a abertura do caixa.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        localStorage.setItem('caixaAberto', 'true');
+        localStorage.setItem('valorInicialCaixa', valorInicial);
+        localStorage.setItem('dataAberturaCaixa', new Date().toISOString());
+        localStorage.setItem('sessionId', data.id);
+        
+        setSessionId(data.id);
+        setCaixaAberto(true);
+        
+        toast({
+          title: "Caixa aberto!",
+          description: `Valor inicial: R$ ${parseFloat(valorInicial).toFixed(2)}`,
+        });
+      } catch (error) {
+        console.error('Erro ao abrir caixa:', error);
+        toast({
+          title: "Erro ao abrir caixa",
+          description: "Tente novamente.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const fecharCaixa = () => {
+  const fecharCaixa = async () => {
     const valorFinal = prompt("Digite o valor final do caixa:");
-    if (valorFinal && !isNaN(parseFloat(valorFinal))) {
-      localStorage.setItem('caixaAberto', 'false');
-      localStorage.setItem('valorFinalCaixa', valorFinal);
-      localStorage.setItem('dataFechamentoCaixa', new Date().toISOString());
-      setCaixaAberto(false);
-      
-      toast({
-        title: "Caixa fechado!",
-        description: `Valor final: R$ ${parseFloat(valorFinal).toFixed(2)}`,
-      });
+    if (valorFinal && !isNaN(parseFloat(valorFinal)) && sessionId) {
+      try {
+        const valorInicialStr = localStorage.getItem('valorInicialCaixa');
+        const valorInicial = valorInicialStr ? parseFloat(valorInicialStr) : 0;
+        const valorFinalNum = parseFloat(valorFinal);
+        
+        // Calcular vendas do dia para o valor esperado
+        const { data: vendas } = await supabase
+          .from('financial_transactions')
+          .select('amount')
+          .eq('type', 'venda')
+          .gte('created_at', new Date().toISOString().split('T')[0]);
+
+        const totalVendas = vendas?.reduce((sum, venda) => sum + Number(venda.amount), 0) || 0;
+        const valorEsperado = valorInicial + totalVendas;
+        const diferenca = valorFinalNum - valorEsperado;
+
+        // Atualizar sessão de caixa
+        const { error } = await supabase
+          .from('cash_sessions')
+          .update({
+            closing_amount: valorFinalNum,
+            expected_amount: valorEsperado,
+            difference: diferenca,
+            closed_at: new Date().toISOString(),
+            status: 'closed'
+          })
+          .eq('id', sessionId);
+
+        if (error) {
+          console.error('Erro ao fechar caixa:', error);
+          toast({
+            title: "Erro ao fechar caixa",
+            description: "Não foi possível registrar o fechamento do caixa.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        localStorage.setItem('caixaAberto', 'false');
+        localStorage.setItem('valorFinalCaixa', valorFinal);
+        localStorage.setItem('dataFechamentoCaixa', new Date().toISOString());
+        localStorage.removeItem('sessionId');
+        
+        setSessionId(null);
+        setCaixaAberto(false);
+        
+        const mensagem = diferenca === 0 
+          ? `Caixa fechado! Valor final: R$ ${valorFinalNum.toFixed(2)} (Conferido)`
+          : `Caixa fechado! Valor final: R$ ${valorFinalNum.toFixed(2)} (Diferença: R$ ${diferenca.toFixed(2)})`;
+        
+        toast({
+          title: "Caixa fechado!",
+          description: mensagem,
+          variant: diferenca === 0 ? "default" : "destructive",
+        });
+      } catch (error) {
+        console.error('Erro ao fechar caixa:', error);
+        toast({
+          title: "Erro ao fechar caixa",
+          description: "Tente novamente.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -169,12 +259,14 @@ export const usePDVLogic = () => {
           type: 'venda',
           amount: dadosVenda.total,
           description: `Venda - ${dadosVenda.formaPagamento} - ${carrinho.length} item(s)`,
+          reference_id: sessionId, // Vincular à sessão de caixa
           notes: JSON.stringify({
             forma_pagamento: dadosVenda.formaPagamento,
             valor_recebido: dadosVenda.valorRecebido,
             troco: dadosVenda.troco,
             desconto: dadosVenda.desconto,
             subtotal: dadosVenda.subtotal,
+            session_id: sessionId,
             items: carrinho.map(item => ({
               nome: item.nome,
               codigo: item.codigo,

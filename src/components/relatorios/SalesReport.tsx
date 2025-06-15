@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search, CreditCard, Banknote, QrCode, Clock } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,32 @@ export const SalesReport = () => {
   const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
   const [appliedDateFrom, setAppliedDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [appliedDateTo, setAppliedDateTo] = useState<Date>(endOfMonth(new Date()));
+
+  // Query para buscar sessões de caixa
+  const { data: cashSessions } = useQuery({
+    queryKey: ['cash-sessions', appliedDateFrom, appliedDateTo],
+    queryFn: async () => {
+      const startDate = format(appliedDateFrom, 'yyyy-MM-dd');
+      const endDate = format(appliedDateTo, 'yyyy-MM-dd');
+      
+      console.log('🏦 Buscando sessões de caixa para o período:', { startDate, endDate });
+
+      const { data, error } = await supabase
+        .from('cash_sessions')
+        .select('*')
+        .gte('opened_at', startDate)
+        .lte('opened_at', endDate + 'T23:59:59')
+        .order('opened_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erro ao buscar sessões de caixa:', error);
+        return [];
+      }
+
+      console.log('🏦 Sessões de caixa encontradas:', data);
+      return data || [];
+    }
+  });
 
   // Query para buscar TODAS as transações (para debug)
   const { data: allTransactions } = useQuery({
@@ -327,6 +353,75 @@ export const SalesReport = () => {
         </CardContent>
       </Card>
 
+      {/* Sessões de Caixa */}
+      {cashSessions && cashSessions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Sessões de Caixa
+            </CardTitle>
+            <CardDescription>
+              Controle de abertura e fechamento do caixa
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {cashSessions.map((session) => (
+                <Card key={session.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Abertura</p>
+                        <p className="text-lg font-semibold">{formatCurrency(Number(session.opening_amount))}</p>
+                        <p className="text-xs text-gray-400">
+                          {format(new Date(session.opened_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </p>
+                      </div>
+                      
+                      {session.status === 'closed' && (
+                        <>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Fechamento</p>
+                            <p className="text-lg font-semibold">{formatCurrency(Number(session.closing_amount))}</p>
+                            <p className="text-xs text-gray-400">
+                              {session.closed_at && format(new Date(session.closed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Esperado</p>
+                            <p className="text-lg font-semibold">{formatCurrency(Number(session.expected_amount))}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Diferença</p>
+                            <p className={`text-lg font-semibold ${Number(session.difference) === 0 ? 'text-green-600' : Number(session.difference) > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {formatCurrency(Number(session.difference))}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {Number(session.difference) === 0 ? 'Conferido' : Number(session.difference) > 0 ? 'Sobra' : 'Falta'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                      
+                      {session.status === 'open' && (
+                        <div className="md:col-span-3 flex items-center">
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                            Caixa Aberto
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Debug Information */}
       <Card className="border-yellow-200 bg-yellow-50">
         <CardHeader>
@@ -336,6 +431,7 @@ export const SalesReport = () => {
           <div className="space-y-2 text-sm">
             <p><strong>Total de transações no sistema:</strong> {allTransactions?.length || 0}</p>
             <p><strong>Vendas no sistema:</strong> {allTransactions?.filter(t => t.type === 'venda').length || 0}</p>
+            <p><strong>Sessões de caixa no período:</strong> {cashSessions?.length || 0}</p>
             {salesData?.debugInfo && (
               <>
                 <p><strong>Período consultado:</strong> {salesData.debugInfo.periodo.startDate} até {salesData.debugInfo.periodo.endDate}</p>
