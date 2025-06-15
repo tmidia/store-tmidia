@@ -11,6 +11,9 @@ export const useCashManagement = () => {
   useEffect(() => {
     const caixaStatus = localStorage.getItem('caixaAberto');
     const sessionIdLocal = localStorage.getItem('sessionId');
+    
+    console.log('🔍 Verificando status do caixa:', { caixaStatus, sessionIdLocal });
+    
     setCaixaAberto(caixaStatus === 'true');
     if (sessionIdLocal) {
       setSessionId(sessionIdLocal);
@@ -45,6 +48,8 @@ export const useCashManagement = () => {
         localStorage.setItem('valorInicialCaixa', valorInicial);
         localStorage.setItem('dataAberturaCaixa', new Date().toISOString());
         localStorage.setItem('sessionId', data.id);
+        
+        console.log('✅ Caixa aberto com sucesso:', { sessionId: data.id, valorInicial });
         
         setSessionId(data.id);
         setCaixaAberto(true);
@@ -83,6 +88,15 @@ export const useCashManagement = () => {
         const valorEsperado = valorInicial + totalVendas;
         const diferenca = valorFinalNum - valorEsperado;
 
+        console.log('💰 Fechando caixa:', {
+          valorInicial,
+          valorFinal: valorFinalNum,
+          totalVendas,
+          valorEsperado,
+          diferenca,
+          sessionId
+        });
+
         // Atualizar sessão de caixa
         const { error } = await supabase
           .from('cash_sessions')
@@ -105,7 +119,13 @@ export const useCashManagement = () => {
           return;
         }
 
-        // Limpar localStorage APÓS confirmação de sucesso no banco
+        console.log('✅ Caixa fechado no banco de dados com sucesso');
+
+        // Primeiro, atualizar os estados
+        setCaixaAberto(false);
+        setSessionId(null);
+
+        // Depois, limpar o localStorage
         localStorage.removeItem('caixaAberto');
         localStorage.removeItem('valorInicialCaixa');
         localStorage.removeItem('valorFinalCaixa');
@@ -113,9 +133,7 @@ export const useCashManagement = () => {
         localStorage.removeItem('dataFechamentoCaixa');
         localStorage.removeItem('sessionId');
         
-        // Atualizar estados APÓS limpar localStorage
-        setSessionId(null);
-        setCaixaAberto(false);
+        console.log('🧹 localStorage limpo e estados atualizados');
         
         const mensagem = diferenca === 0 
           ? `Caixa fechado! Valor final: R$ ${valorFinalNum.toFixed(2)} (Conferido)`
