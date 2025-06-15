@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Upload } from 'lucide-react';
+import { Building2, Upload, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -20,6 +20,8 @@ const CompanySettings = () => {
     logo_url: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,6 +75,44 @@ const CompanySettings = () => {
     }
 
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
+  };
+  
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) {
+      return;
+    }
+    
+    const file = event.target.files[0];
+    const filePath = `public/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+    
+    setIsUploading(true);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      toast({
+        title: "Logo enviado",
+        description: "Seu logo foi enviado. Clique em 'Salvar Configurações' para aplicá-lo.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Não foi possível enviar o logo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,23 +206,37 @@ const CompanySettings = () => {
               />
             </div>
             <div>
-              <Label htmlFor="logo_url">URL do Logo</Label>
+              <Label htmlFor="logo_url">Logo da Empresa</Label>
               <div className="flex space-x-2">
                 <Input
                   id="logo_url"
                   value={formData.logo_url}
                   onChange={(e) => handleInputChange('logo_url', e.target.value)}
-                  placeholder="https://exemplo.com/logo.png"
+                  placeholder="Cole a URL ou faça o upload"
                 />
-                <Button type="button" variant="outline" size="sm">
-                  <Upload className="w-4 h-4" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  aria-label="Fazer upload do logo"
+                >
+                  {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
                 </Button>
               </div>
             </div>
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || isUploading}>
               {isLoading ? 'Salvando...' : 'Salvar Configurações'}
             </Button>
           </div>
