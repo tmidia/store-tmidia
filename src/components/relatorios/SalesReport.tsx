@@ -34,6 +34,11 @@ export const SalesReport = () => {
   const { data: salesData, isLoading, refetch } = useQuery({
     queryKey: ['sales-report', appliedDateFrom, appliedDateTo],
     queryFn: async () => {
+      console.log('Buscando vendas para o período:', {
+        inicio: format(appliedDateFrom, 'yyyy-MM-dd'),
+        fim: format(appliedDateTo, 'yyyy-MM-dd')
+      });
+
       const { data: transactions, error } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -42,12 +47,27 @@ export const SalesReport = () => {
         .lte('transaction_date', format(appliedDateTo, 'yyyy-MM-dd'))
         .order('transaction_date', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar transações:', error);
+        throw error;
+      }
 
       console.log('Transações encontradas:', transactions);
 
+      if (!transactions || transactions.length === 0) {
+        console.log('Nenhuma transação encontrada para o período');
+        return {
+          chartData: [],
+          totalVendas: 0,
+          totalReceita: 0,
+          ticketMedio: 0,
+          paymentTotals: {},
+          transactions: []
+        };
+      }
+
       // Agrupar por data
-      const groupedData = transactions?.reduce((acc: any, transaction) => {
+      const groupedData = transactions.reduce((acc: any, transaction) => {
         const date = transaction.transaction_date;
         if (!acc[date]) {
           acc[date] = { date, vendas: 0, receita: 0 };
@@ -57,20 +77,22 @@ export const SalesReport = () => {
         return acc;
       }, {});
 
-      const chartData = Object.values(groupedData || {}).map((item: any) => ({
+      const chartData = Object.values(groupedData).map((item: any) => ({
         ...item,
         date: format(new Date(item.date), 'dd/MM', { locale: ptBR })
       }));
 
       // Calcular totais por forma de pagamento
-      const paymentTotals = transactions?.reduce((acc: any, transaction) => {
+      const paymentTotals = transactions.reduce((acc: any, transaction) => {
         let paymentMethod = 'outros';
         
         try {
-          const notes = JSON.parse(transaction.notes || '{}');
-          paymentMethod = notes.forma_pagamento || 'outros';
+          if (transaction.notes) {
+            const notes = JSON.parse(transaction.notes);
+            paymentMethod = notes.forma_pagamento || 'outros';
+          }
         } catch (e) {
-          // Se não conseguir fazer parse das notes, mantem 'outros'
+          console.log('Erro ao fazer parse das notes:', e);
         }
 
         if (!acc[paymentMethod]) {
@@ -81,9 +103,16 @@ export const SalesReport = () => {
         return acc;
       }, {});
 
-      const totalVendas = transactions?.length || 0;
-      const totalReceita = transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+      const totalVendas = transactions.length;
+      const totalReceita = transactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
       const ticketMedio = totalVendas > 0 ? totalReceita / totalVendas : 0;
+
+      console.log('Dados processados:', {
+        totalVendas,
+        totalReceita,
+        ticketMedio,
+        paymentTotals
+      });
 
       return {
         chartData,
@@ -91,12 +120,17 @@ export const SalesReport = () => {
         totalReceita,
         ticketMedio,
         paymentTotals,
-        transactions: transactions || []
+        transactions
       };
     }
   });
 
   const handleSearch = () => {
+    console.log('Aplicando filtros:', {
+      dateFrom: format(dateFrom, 'yyyy-MM-dd'),
+      dateTo: format(dateTo, 'yyyy-MM-dd')
+    });
+    
     setAppliedDateFrom(dateFrom);
     setAppliedDateTo(dateTo);
   };
@@ -203,6 +237,11 @@ export const SalesReport = () => {
               <p className="text-sm text-blue-700">
                 <strong>Período aplicado:</strong> {format(appliedDateFrom, 'dd/MM/yyyy', { locale: ptBR })} até {format(appliedDateTo, 'dd/MM/yyyy', { locale: ptBR })}
               </p>
+              {salesData && (
+                <p className="text-xs text-blue-600 mt-1">
+                  Encontradas {salesData.totalVendas} vendas no período
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -299,6 +338,24 @@ export const SalesReport = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Debug - Mostrar transações encontradas se não houver dados */}
+      {salesData?.totalVendas === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug - Informações de Busca</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <p><strong>Período consultado:</strong> {format(appliedDateFrom, 'yyyy-MM-dd')} até {format(appliedDateTo, 'yyyy-MM-dd')}</p>
+              <p><strong>Transações encontradas:</strong> {salesData?.transactions?.length || 0}</p>
+              <p className="text-orange-600">
+                Nenhuma venda encontrada no período. Verifique se há vendas registradas nas datas selecionadas.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
