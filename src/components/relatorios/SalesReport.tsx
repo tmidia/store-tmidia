@@ -4,18 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search } from 'lucide-react';
+import { CalendarIcon, Download, TrendingUp, DollarSign, ShoppingCart, Search, CreditCard, Banknote, QrCode } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, BarChart, Bar } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const chartConfig = {
   vendas: { label: "Vendas", color: "#3b82f6" },
   receita: { label: "Receita", color: "#10b981" }
+};
+
+const paymentColors = {
+  dinheiro: "#10b981",
+  cartao: "#3b82f6", 
+  pix: "#f59e0b",
+  misto: "#8b5cf6"
 };
 
 export const SalesReport = () => {
@@ -37,6 +44,8 @@ export const SalesReport = () => {
 
       if (error) throw error;
 
+      console.log('Transações encontradas:', transactions);
+
       // Agrupar por data
       const groupedData = transactions?.reduce((acc: any, transaction) => {
         const date = transaction.transaction_date;
@@ -53,6 +62,25 @@ export const SalesReport = () => {
         date: format(new Date(item.date), 'dd/MM', { locale: ptBR })
       }));
 
+      // Calcular totais por forma de pagamento
+      const paymentTotals = transactions?.reduce((acc: any, transaction) => {
+        let paymentMethod = 'outros';
+        
+        try {
+          const notes = JSON.parse(transaction.notes || '{}');
+          paymentMethod = notes.forma_pagamento || 'outros';
+        } catch (e) {
+          // Se não conseguir fazer parse das notes, mantem 'outros'
+        }
+
+        if (!acc[paymentMethod]) {
+          acc[paymentMethod] = { total: 0, count: 0 };
+        }
+        acc[paymentMethod].total += Number(transaction.amount || 0);
+        acc[paymentMethod].count += 1;
+        return acc;
+      }, {});
+
       const totalVendas = transactions?.length || 0;
       const totalReceita = transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
       const ticketMedio = totalVendas > 0 ? totalReceita / totalVendas : 0;
@@ -62,6 +90,7 @@ export const SalesReport = () => {
         totalVendas,
         totalReceita,
         ticketMedio,
+        paymentTotals,
         transactions: transactions || []
       };
     }
@@ -73,7 +102,6 @@ export const SalesReport = () => {
   };
 
   const exportToPDF = () => {
-    // Implementação futura de exportação para PDF
     console.log('Exportando relatório de vendas para PDF...', {
       periodo: {
         inicio: format(appliedDateFrom, 'dd/MM/yyyy'),
@@ -88,6 +116,25 @@ export const SalesReport = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const getPaymentMethodIcon = (method: string) => {
+    switch (method) {
+      case 'dinheiro': return <Banknote className="w-4 h-4" />;
+      case 'cartao': return <CreditCard className="w-4 h-4" />;
+      case 'pix': return <QrCode className="w-4 h-4" />;
+      default: return <DollarSign className="w-4 h-4" />;
+    }
+  };
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch (method) {
+      case 'dinheiro': return 'Dinheiro';
+      case 'cartao': return 'Cartão';
+      case 'pix': return 'PIX';
+      case 'misto': return 'Misto';
+      default: return 'Outros';
+    }
   };
 
   return (
@@ -196,6 +243,36 @@ export const SalesReport = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Vendas por Forma de Pagamento */}
+      {salesData?.paymentTotals && Object.keys(salesData.paymentTotals).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendas por Forma de Pagamento</CardTitle>
+            <CardDescription>Distribuição das vendas conforme meio de pagamento</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(salesData.paymentTotals).map(([method, data]: [string, any]) => (
+                <Card key={method} className="border-l-4" style={{ borderLeftColor: paymentColors[method as keyof typeof paymentColors] || '#6b7280' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getPaymentMethodIcon(method)}
+                        <span className="text-sm font-medium">{getPaymentMethodLabel(method)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-2xl font-bold">{formatCurrency(data.total)}</div>
+                      <p className="text-xs text-muted-foreground">{data.count} transação(ões)</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gráfico de Vendas */}
       <Card>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useProducts } from '@/hooks/useProducts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CartItem {
   id: string;
@@ -123,7 +124,7 @@ export const usePDVLogic = () => {
     }
   };
 
-  const finalizarVenda = (dadosVenda: any) => {
+  const finalizarVenda = async (dadosVenda: any) => {
     if (!caixaAberto) {
       toast({
         title: "Caixa fechado",
@@ -160,17 +161,59 @@ export const usePDVLogic = () => {
       return;
     }
 
-    toast({
-      title: "Venda finalizada!",
-      description: `Total: R$ ${dadosVenda.total.toFixed(2)}`,
-    });
+    try {
+      // Registrar a venda na tabela financial_transactions
+      const { error } = await supabase
+        .from('financial_transactions')
+        .insert({
+          type: 'venda',
+          amount: dadosVenda.total,
+          description: `Venda - ${dadosVenda.formaPagamento} - ${carrinho.length} item(s)`,
+          notes: JSON.stringify({
+            forma_pagamento: dadosVenda.formaPagamento,
+            valor_recebido: dadosVenda.valorRecebido,
+            troco: dadosVenda.troco,
+            desconto: dadosVenda.desconto,
+            subtotal: dadosVenda.subtotal,
+            items: carrinho.map(item => ({
+              nome: item.nome,
+              codigo: item.codigo,
+              quantidade: item.quantidade,
+              preco: item.preco
+            }))
+          }),
+          transaction_date: new Date().toISOString().split('T')[0]
+        });
 
-    // Limpar dados
-    setCarrinho([]);
-    setDesconto(0);
-    setFormaPagamento('');
-    setValorRecebido('');
-    setClienteNome('');
+      if (error) {
+        console.error('Erro ao registrar venda:', error);
+        toast({
+          title: "Erro ao registrar venda",
+          description: "A venda foi processada, mas houve erro no registro.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Venda finalizada!",
+          description: `Total: R$ ${dadosVenda.total.toFixed(2)}`,
+        });
+      }
+
+      // Limpar dados
+      setCarrinho([]);
+      setDesconto(0);
+      setFormaPagamento('');
+      setValorRecebido('');
+      setClienteNome('');
+
+    } catch (error) {
+      console.error('Erro ao finalizar venda:', error);
+      toast({
+        title: "Erro ao finalizar venda",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const produtosFiltrados = produtos.filter(produto =>
