@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -17,6 +17,7 @@ type CompanySettings = Database['public']['Tables']['company_settings']['Row'];
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const { userProfile } = useRoleBasedAccess();
   const [companySettings, setCompanySettings] = useState<Pick<CompanySettings, 'logo_url'> | null>(null);
+  const location = useLocation();
 
   const fetchCompanySettings = async () => {
     try {
@@ -56,6 +57,11 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   };
   
   const fallbackInitials = userProfile ? getInitials(userProfile.full_name || userProfile.username) : 'U';
+
+  // Ocultar sidebar na rota do PDV para modo tela cheia
+  if (location.pathname === '/pdv') {
+    return <div className="min-h-screen bg-gray-50/50">{children}</div>;
+  }
 
   return (
     <SidebarProvider>

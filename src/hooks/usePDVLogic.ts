@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCashManagement } from './pdv/useCashManagement';
@@ -61,6 +60,7 @@ export const usePDVLogic = () => {
     adicionarAoCarrinho,
     removerDoCarrinho,
     alterarQuantidade,
+    limparCarrinho,
     abrirCaixa,
     fecharCaixa,
     realizarSangria,

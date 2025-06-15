@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Palette } from 'lucide-react';
+import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 interface PDVHeaderProps {
   caixaAberto: boolean;
@@ -11,6 +12,8 @@ interface PDVHeaderProps {
 }
 
 const PDVHeader = ({ caixaAberto, onAbrirCaixa, onFecharCaixa, onToggleTheme }: PDVHeaderProps) => {
+  const { userProfile } = useRoleBasedAccess();
+  const isAdmin = userProfile?.user_type === 'admin';
   const classicBtnClasses = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200";
 
   return (
@@ -20,9 +23,11 @@ const PDVHeader = ({ caixaAberto, onAbrirCaixa, onFecharCaixa, onToggleTheme }: 
         <p className="text-gray-600 mt-1 text-sm sm:text-base group-[.pdv-classic]:text-slate-300">Ponto de Venda</p>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-        <Button onClick={onToggleTheme} variant="outline" size="icon" className={`hidden sm:inline-flex ${classicBtnClasses}`} title="Alterar Tema">
-          <Palette className="w-5 h-5" />
-        </Button>
+        {isAdmin && (
+          <Button onClick={onToggleTheme} variant="outline" size="icon" className={`hidden sm:inline-flex ${classicBtnClasses}`} title="Alterar Tema">
+            <Palette className="w-5 h-5" />
+          </Button>
+        )}
         <Badge className={`w-fit ${caixaAberto ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"} group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:text-black group-[.pdv-classic]:border-none group-[.pdv-classic]:rounded-none`}>
           {caixaAberto ? "Caixa Aberto" : "Caixa Fechado"}
         </Badge>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, MinusCircle } from 'lucide-react';
 import { useSystemParameters } from '@/hooks/useSystemParameters';
@@ -7,18 +7,16 @@ import { usePDVLogic } from '@/hooks/usePDVLogic';
 import { usePdvTheme } from '@/hooks/usePdvTheme';
 import PDVHeader from '@/components/pdv/PDVHeader';
 import ProductSearch from '@/components/pdv/ProductSearch';
-import ProductList from '@/components/pdv/ProductList';
-import ShoppingCart from '@/components/pdv/ShoppingCart';
-import PaymentPanel from '@/components/pdv/PaymentPanel';
 import ConsultationPanel from '@/components/pdv/ConsultationPanel';
 import { SangriaDialog } from '@/components/pdv/SangriaDialog';
 import { Button } from '@/components/ui/button';
+import ShortcutPanel from '@/components/pdv/ShortcutPanel';
+import CartTable from '@/components/pdv/CartTable';
+import PaymentPanel from '@/components/pdv/PaymentPanel'; // Manter para o modal
 
 const PDV = () => {
   const { isPDVEnabled } = useSystemParameters();
   const {
-    searchTerm,
-    setSearchTerm,
     carrinho,
     desconto,
     setDesconto,
@@ -31,20 +29,73 @@ const PDV = () => {
     caixaAberto,
     modoConsulta,
     setModoConsulta,
-    produtosFiltrados,
+    produtos,
     loading,
     adicionarAoCarrinho,
     removerDoCarrinho,
     alterarQuantidade,
+    limparCarrinho,
     abrirCaixa,
     fecharCaixa,
     realizarSangria,
-    finalizarVenda
+    finalizarVenda,
   } = usePDVLogic();
+  
   const { theme, toggleTheme } = usePdvTheme();
   const [isSangriaDialogOpen, setIsSangriaDialogOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Verificar se o PDV está habilitado
+  // Lógica de Tela Cheia
+  useEffect(() => {
+    const enterFullscreen = () => {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    };
+    const exitFullscreen = () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    };
+
+    if (caixaAberto) enterFullscreen();
+    else exitFullscreen();
+
+    return () => exitFullscreen(); // Sair da tela cheia ao desmontar o componente
+  }, [caixaAberto]);
+
+  // Lógica de Atalhos do Teclado
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (!caixaAberto) return;
+    switch (event.key) {
+      case 'F2':
+        event.preventDefault();
+        setIsPaymentModalOpen(true);
+        break;
+      case 'F5':
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        break;
+      case 'F9':
+        event.preventDefault();
+        limparCarrinho();
+        break;
+    }
+  }, [caixaAberto, limparCarrinho]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  const handleFinalizarVenda = (dadosVenda: any) => {
+    finalizarVenda(dadosVenda);
+    setIsPaymentModalOpen(false);
+  };
+
   if (!isPDVEnabled()) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -67,93 +118,83 @@ const PDV = () => {
     );
   }
 
+  const handleSearchAndAddToCart = (searchTerm: string) => {
+    if(!caixaAberto || !searchTerm) return;
+    const foundProduct = produtos.find(p => p.code.toLowerCase() === searchTerm.toLowerCase() || p.name.toLowerCase() === searchTerm.toLowerCase());
+    if (foundProduct) {
+      adicionarAoCarrinho(foundProduct);
+    } else {
+      // toast de produto não encontrado
+    }
+  };
+
+
   return (
-    <div className={`p-6 min-h-screen group ${theme} group-[.pdv-classic]:bg-slate-400 group-[.pdv-classic]:font-sans`}>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Produtos */}
-        <div className="lg:col-span-2 space-y-6">
-          <PDVHeader 
-            caixaAberto={caixaAberto}
-            onAbrirCaixa={abrirCaixa}
-            onFecharCaixa={fecharCaixa}
-            onToggleTheme={toggleTheme}
-          />
+    <div className={`p-4 min-h-screen group ${theme} group-[.pdv-classic]:bg-slate-400 group-[.pdv-classic]:font-sans`}>
+      <PDVHeader 
+        caixaAberto={caixaAberto}
+        onAbrirCaixa={abrirCaixa}
+        onFecharCaixa={fecharCaixa}
+        onToggleTheme={toggleTheme}
+      />
 
-          {!caixaAberto && (
-            <Card className="border-red-200 bg-red-50 group-[.pdv-classic]:bg-red-200 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-red-400 group-[.pdv-classic]:shadow-none">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-red-700 group-[.pdv-classic]:text-red-900">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="font-medium">Caixa fechado - Vendas bloqueadas (Consulta de produtos permitida)</span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+      {modoConsulta ? (
+         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <ProductSearch searchTerm="" onSearchChange={() => {}} modoConsulta={true} onModoConsultaChange={setModoConsulta} caixaAberto={caixaAberto} />
+            </div>
+            <div className="space-y-6"><ConsultationPanel /></div>
+         </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
+          {/* Coluna Esquerda */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <ProductSearch
+              searchTerm=""
+              onSearchChange={handleSearchAndAddToCart} // Lógica de busca e adição
+              modoConsulta={modoConsulta}
+              onModoConsultaChange={setModoConsulta}
+              caixaAberto={caixaAberto}
+              ref={searchInputRef}
+            />
+            <ShortcutPanel 
+              onFinalizeSale={() => setIsPaymentModalOpen(true)}
+              onCancelSale={limparCarrinho}
+              onSearchProduct={() => searchInputRef.current?.focus()}
+              caixaAberto={caixaAberto}
+            />
+          </div>
 
-          {caixaAberto && (
-            <Card className="group-[.pdv-classic]:bg-transparent group-[.pdv-classic]:border-none group-[.pdv-classic]:shadow-none">
-              <CardContent className="p-4 flex items-center justify-end group-[.pdv-classic]:p-0">
-                  <Button 
-                    variant="secondary" 
-                    onClick={() => setIsSangriaDialogOpen(true)}
-                    className="group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200"
-                  >
-                    <MinusCircle className="mr-2" />
-                    Realizar Sangria
-                  </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          <ProductSearch 
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            modoConsulta={modoConsulta}
-            onModoConsultaChange={setModoConsulta}
-            caixaAberto={caixaAberto}
-          />
-
-          <ProductList 
-            produtos={produtosFiltrados}
-            modoConsulta={modoConsulta}
-            caixaAberto={caixaAberto}
-            onAdicionarAoCarrinho={adicionarAoCarrinho}
-          />
+          {/* Coluna Direita */}
+          <div className="lg:col-span-5 flex flex-col gap-6 h-full">
+              <CartTable 
+                carrinho={carrinho}
+                onRemoverDoCarrinho={removerDoCarrinho}
+                onAlterarQuantidade={alterarQuantidade}
+                caixaAberto={caixaAberto}
+                desconto={desconto}
+              />
+          </div>
         </div>
+      )}
 
-        {/* Carrinho e Pagamento - Só exibir se não estiver em modo consulta */}
-        {!modoConsulta && (
-          <div className="space-y-6">
-            <ShoppingCart 
-              carrinho={carrinho}
-              clienteNome={clienteNome}
-              onClienteNomeChange={setClienteNome}
-              onRemoverDoCarrinho={removerDoCarrinho}
-              onAlterarQuantidade={alterarQuantidade}
-              caixaAberto={caixaAberto}
-            />
+      {isPaymentModalOpen && (
+        <PaymentPanel 
+          carrinho={carrinho}
+          desconto={desconto}
+          onDescontoChange={setDesconto}
+          formaPagamento={formaPagamento}
+          onFormaPagamentoChange={setFormaPagamento}
+          valorRecebido={valorRecebido}
+          onValorRecebidoChange={setValorRecebido}
+          onFinalizarVenda={handleFinalizarVenda}
+          caixaAberto={caixaAberto}
+          // Para fechar o modal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+        />
+      )}
 
-            <PaymentPanel 
-              carrinho={carrinho}
-              desconto={desconto}
-              onDescontoChange={setDesconto}
-              formaPagamento={formaPagamento}
-              onFormaPagamentoChange={setFormaPagamento}
-              valorRecebido={valorRecebido}
-              onValorRecebidoChange={setValorRecebido}
-              onFinalizarVenda={finalizarVenda}
-              caixaAberto={caixaAberto}
-            />
-          </div>
-        )}
-
-        {/* Painel de Consulta - Só exibir se estiver em modo consulta */}
-        {modoConsulta && (
-          <div className="space-y-6">
-            <ConsultationPanel />
-          </div>
-        )}
-      </div>
       <SangriaDialog
         isOpen={isSangriaDialogOpen}
         onOpenChange={setIsSangriaDialogOpen}

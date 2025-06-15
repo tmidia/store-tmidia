@@ -1,13 +1,12 @@
-
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { DollarSign, Banknote, QrCode, CreditCard, Calculator } from 'lucide-react';
+import { DollarSign, Banknote, QrCode, CreditCard, Calculator, X } from 'lucide-react';
 import ReceiptModal from './ReceiptModal';
 import { useSystemParameters } from '@/hooks/useSystemParameters';
+import { useState } from 'react';
 
 interface CartItem {
   id: string;
@@ -27,6 +26,8 @@ interface PaymentPanelProps {
   onValorRecebidoChange: (value: string) => void;
   onFinalizarVenda: (dadosVenda: any) => void;
   caixaAberto: boolean;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const PaymentPanel = ({ 
@@ -38,7 +39,9 @@ const PaymentPanel = ({
   valorRecebido, 
   onValorRecebidoChange, 
   onFinalizarVenda, 
-  caixaAberto 
+  caixaAberto,
+  isOpen,
+  onClose
 }: PaymentPanelProps) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
@@ -103,99 +106,102 @@ const PaymentPanel = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <>
-      <Card className={`border-0 shadow-md bg-white ${classicCard}`}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Resumo da Venda</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>Subtotal:</span>
-              <span>R$ {subtotal.toFixed(2)}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className="flex-1">Desconto (%):</span>
-              <Input
-                type="number"
-                value={desconto}
-                onChange={(e) => onDescontoChange(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                className={`w-20 h-8 ${classicInput}`}
-                min="0"
-                max="100"
-                disabled={!caixaAberto || !isManualDiscountAllowed()}
-              />
-            </div>
-
-            {desconto > 0 && (
-              <div className="flex justify-between text-red-600">
-                <span>Desconto:</span>
-                <span>- R$ {valorDesconto.toFixed(2)}</span>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[480px] group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:text-black">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex justify-between items-center">
+              Finalizar Venda
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon"><X className="h-5 w-5"/></Button>
+              </DialogClose>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2 p-4 bg-gray-50 rounded-lg group-[.pdv-classic]:bg-slate-200">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>R$ {subtotal.toFixed(2)}</span>
               </div>
-            )}
-
-            <Separator />
-            
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total:</span>
-              <span className="text-primary group-[.pdv-classic]:text-blue-800">R$ {total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Forma de Pagamento:</label>
-            <Select value={formaPagamento} onValueChange={onFormaPagamentoChange} disabled={!caixaAberto}>
-              <SelectTrigger className={classicInput}>
-                <SelectValue placeholder="Selecione a forma de pagamento" />
-              </SelectTrigger>
-              <SelectContent className="group-[.pdv-classic]:bg-slate-300">
-                {formasPagamento.map(forma => (
-                  <SelectItem key={forma.value} value={forma.value}>
-                    <div className="flex items-center space-x-2">
-                      <forma.icon className="w-4 h-4" />
-                      <span>{forma.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {formaPagamento === 'dinheiro' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Valor Recebido:</label>
+              <div className="flex items-center space-x-2">
+                <span className="flex-1">Desconto (%):</span>
                 <Input
                   type="number"
-                  step="0.01"
-                  value={valorRecebido}
-                  onChange={(e) => onValorRecebidoChange(e.target.value)}
-                  placeholder="0,00"
-                  disabled={!caixaAberto}
-                  className={classicInput}
+                  value={desconto}
+                  onChange={(e) => onDescontoChange(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                  className="w-24 h-9"
+                  min="0"
+                  max="100"
+                  disabled={!caixaAberto || !isManualDiscountAllowed()}
                 />
-                {valorRecebido && parseFloat(valorRecebido) >= total && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Troco:</span>
-                    <span className="font-semibold">R$ {troco.toFixed(2)}</span>
-                  </div>
-                )}
               </div>
-            )}
+              {desconto > 0 && (
+                <div className="flex justify-between text-red-600">
+                  <span>Desconto:</span>
+                  <span>- R$ {valorDesconto.toFixed(2)}</span>
+                </div>
+              )}
+              <Separator />
+              <div className="flex justify-between text-xl font-semibold">
+                <span>Total a Pagar:</span>
+                <span className="text-primary group-[.pdv-classic]:text-blue-800">R$ {total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-4">
+              <label className="text-sm font-medium">Forma de Pagamento:</label>
+              <Select value={formaPagamento} onValueChange={onFormaPagamentoChange} disabled={!caixaAberto}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {formasPagamento.map(forma => (
+                    <SelectItem key={forma.value} value={forma.value}>
+                      <div className="flex items-center space-x-2">
+                        <forma.icon className="w-4 h-4" />
+                        <span>{forma.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {formaPagamento === 'dinheiro' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Valor Recebido:</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={valorRecebido}
+                    onChange={(e) => onValorRecebidoChange(e.target.value)}
+                    placeholder="0,00"
+                    disabled={!caixaAberto}
+                  />
+                  {valorRecebido && parseFloat(valorRecebido) >= total && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Troco:</span>
+                      <span>R$ {troco.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-
-          <Button 
-            onClick={handleFinalizarVenda}
-            className={`w-full h-12 bg-primary hover:bg-blue-dark text-lg font-semibold ${classicButton} group-[.pdv-classic]:!bg-green-600 group-[.pdv-classic]:!text-white`}
-            disabled={carrinho.length === 0 || !caixaAberto}
-          >
-            <DollarSign className="w-5 h-5 mr-2" />
-            Finalizar Venda
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Modal de Impressão */}
+          <DialogFooter>
+            <Button 
+              onClick={handleFinalizarVenda}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-semibold"
+              disabled={carrinho.length === 0 || !caixaAberto || !formaPagamento}
+            >
+              <DollarSign className="w-5 h-5 mr-2" />
+              Confirmar Pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {showReceiptModal && lastSaleData && (
         <ReceiptModal
           isOpen={showReceiptModal}
