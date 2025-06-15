@@ -96,13 +96,14 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
     const plainModule = typeof module === 'string' ? module : String(module);
     // usar includes de string para comparar
     const permsArr: string[] = Array.isArray(userProfile.permissions) ? userProfile.permissions : [];
-    const has = permsArr.includes(plainModule) || hasRole('superadmin');
-    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has });
+    const has = permsArr.includes(plainModule) || isAdmin(); // Changed from hasRole('superadmin') to isAdmin()
+    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has, isAdmin: isAdmin() });
     return has;
   };
 
   const isSuperAdmin = () => hasRole('superadmin');
   const isAdmin = () => hasRole('superadmin') || hasRole('gerente');
+
   const canAccessUserManagement = () => isSuperAdmin();
   const canAccessFinancials = () => hasPermission('financeiro') || isAdmin();
   const canAccessProducts = () => hasPermission('produtos') || isAdmin();
