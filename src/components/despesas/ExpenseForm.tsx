@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -83,10 +82,13 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
 
 
   const onSubmit = (data: ExpenseFormValues) => {
+    const selectedSupplier = suppliers?.find(s => s.id === data.supplier_id);
     const submissionData = {
       ...data,
       due_date: data.due_date.toISOString(),
       supplier_id: data.supplier_id || null,
+      remaining_amount: data.amount,
+      supplier_name: selectedSupplier?.name ?? '',
     };
 
     if (isEditing && expense) {

@@ -11,6 +11,9 @@ interface UserProfile {
   user_type: UserType;
   is_active: boolean;
   permissions: ModuleName[];
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
 }
 
 interface RoleBasedAccessContextProps {
@@ -45,7 +48,7 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
       try {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, user_type, is_active')
+          .select('id, user_type, is_active, full_name, username, avatar_url')
           .eq('id', user.id)
           .single();
 
@@ -66,14 +69,20 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
           id: profile.id,
           user_type: profile.user_type,
           is_active: profile.is_active,
-          permissions: loadedPerms
+          permissions: loadedPerms,
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
         });
 
         setUserProfile({
           id: profile.id,
           user_type: profile.user_type,
           is_active: profile.is_active,
-          permissions: loadedPerms
+          permissions: loadedPerms,
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
         });
         setIsLoading(false);
       } catch (err) {
