@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -105,8 +106,9 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
     const plainModule = typeof module === 'string' ? module : String(module);
     // usar includes de string para comparar
     const permsArr: string[] = Array.isArray(userProfile.permissions) ? userProfile.permissions : [];
-    const has = permsArr.includes(plainModule) || isAdmin(); // Changed from hasRole('superadmin') to isAdmin()
-    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has, isAdmin: isAdmin() });
+    // MUDANÇA: apenas superadmins podem acessar configurações, não mais gerentes
+    const has = permsArr.includes(plainModule) || (plainModule !== 'configuracoes' && isAdmin());
+    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has, isSuperAdmin: isSuperAdmin() });
     return has;
   };
 

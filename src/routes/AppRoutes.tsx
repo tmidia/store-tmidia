@@ -118,7 +118,7 @@ export const AppRoutes = () => {
       } />
       <Route path="/configuracoes" element={
         <AuthWrapper>
-          <ProtectedRoute requiredPermission="configuracoes">
+          <ProtectedRoute requireSuperAdmin>
             <MainLayout>
               <ConfiguracoesPage />
             </MainLayout>
