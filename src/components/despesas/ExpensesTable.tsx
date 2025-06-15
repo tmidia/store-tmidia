@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -21,9 +20,11 @@ import { formatDate, formatCurrency } from "@/utils/formatters";
 
 interface ExpensesTableProps {
     expenses: ExpenseWithSupplier[];
+    onEdit: (expense: ExpenseWithSupplier) => void;
+    onDelete: (id: string) => void;
 }
 
-const getStatusVariant = (status: Expense['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
+const getStatusVariant = (status: ExpenseWithSupplier['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
         case 'pago':
             return 'default';
@@ -38,7 +39,7 @@ const getStatusVariant = (status: Expense['status']): 'default' | 'secondary' | 
     }
 };
 
-export function ExpensesTable({ expenses }: ExpensesTableProps) {
+export function ExpensesTable({ expenses, onEdit, onDelete }: ExpensesTableProps) {
     return (
         <div className="border rounded-lg bg-white">
             <Table>
@@ -57,7 +58,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                     {expenses.map((expense) => (
                         <TableRow key={expense.id}>
                             <TableCell className="font-medium">{expense.description || '-'}</TableCell>
-                            <TableCell>{expense.suppliers?.name || expense.supplier_name}</TableCell>
+                            <TableCell>{expense.suppliers?.name || expense.supplier_name || '-'}</TableCell>
                             <TableCell>{expense.category || '-'}</TableCell>
                             <TableCell>{formatDate(expense.due_date)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
@@ -73,8 +74,8 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => onEdit(expense)}>Editar</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-red-600" onSelect={() => onDelete(expense.id)}>Excluir</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

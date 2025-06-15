@@ -4,26 +4,35 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
+import { ExpenseForm } from "./ExpenseForm"
+import type { ExpenseWithSupplier } from "@/hooks/useExpenses"
 
-// TODO: Implement form for adding/editing expenses
-export function ExpenseDialog() {
+interface ExpenseDialogProps {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  expense?: ExpenseWithSupplier | null
+}
+
+export function ExpenseDialog({ isOpen, onOpenChange, expense }: ExpenseDialogProps) {
+  const isEditing = !!expense
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Despesa
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Adicionar Despesa</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Despesa' : 'Adicionar Despesa'}</DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Altere as informações da despesa abaixo.'
+              : 'Preencha as informações para adicionar uma nova despesa.'}
+          </DialogDescription>
         </DialogHeader>
-        <p>O formulário para adicionar e editar despesas será implementado aqui.</p>
+        <ExpenseForm 
+            expense={expense || undefined} 
+            onSuccess={() => onOpenChange(false)} 
+        />
       </DialogContent>
     </Dialog>
   )
