@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCashManagement } from './pdv/useCashManagement';
 import { useCartManagement } from './pdv/useCartManagement';
@@ -35,10 +35,34 @@ export const usePDVLogic = () => {
     );
   };
 
-  const produtosFiltrados = produtos.filter(produto =>
-    produto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Usar useMemo para otimizar a filtragem e adicionar logs para debug
+  const produtosFiltrados = useMemo(() => {
+    console.log('🔍 Filtrando produtos:', { 
+      searchTerm, 
+      totalProdutos: produtos.length,
+      produtos: produtos.slice(0, 3) // Mostra apenas os 3 primeiros para debug
+    });
+    
+    if (!searchTerm || searchTerm.trim() === '') {
+      console.log('🔍 Termo de busca vazio, retornando array vazio');
+      return [];
+    }
+    
+    const termoBusca = searchTerm.toLowerCase().trim();
+    const filtered = produtos.filter(produto => {
+      const nomeMatch = produto.name?.toLowerCase().includes(termoBusca);
+      const codigoMatch = produto.code?.toLowerCase().includes(termoBusca);
+      return nomeMatch || codigoMatch;
+    });
+    
+    console.log('🔍 Produtos filtrados:', { 
+      termoBusca, 
+      encontrados: filtered.length,
+      produtos: filtered.slice(0, 3) // Mostra apenas os 3 primeiros para debug
+    });
+    
+    return filtered;
+  }, [produtos, searchTerm]);
 
   return {
     searchTerm,

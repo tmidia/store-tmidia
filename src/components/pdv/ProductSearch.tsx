@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,11 +24,17 @@ const ProductSearch = React.forwardRef<HTMLInputElement, ProductSearchProps>(({
   const classicButton = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200";
   const classicInput = "group-[.pdv-classic]:bg-white group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-600 group-[.pdv-classic]:border-l-slate-600 group-[.pdv-classic]:border-b-slate-200 group-[.pdv-classic]:border-r-slate-200 group-[.pdv-classic]:shadow-inner group-[.pdv-classic]:rounded-none group-[.pdv-classic]:text-black";
 
+  // Atualiza a busca em tempo real enquanto o usuário digita
+  useEffect(() => {
+    onSearchChange(internalSearchTerm);
+  }, [internalSearchTerm, onSearchChange]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      onSearchChange(internalSearchTerm);
-      setInternalSearchTerm('');
+      // O filtro já está sendo aplicado em tempo real, então apenas mantemos o foco
+      (e.target as HTMLInputElement).blur();
+      (e.target as HTMLInputElement).focus();
     }
   };
   
@@ -73,7 +79,7 @@ const ProductSearch = React.forwardRef<HTMLInputElement, ProductSearchProps>(({
             disabled={!caixaAberto && !modoConsulta}
           />
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-gray-500 mt-3">
-            <span>Adicionar</span>
+            <span>Buscar</span>
             <CornerDownLeft className="w-3 h-3"/>
           </div>
         </div>
