@@ -1,17 +1,16 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import { useSystemParameters } from '@/hooks/useSystemParameters';
 import { usePDVLogic } from '@/hooks/usePDVLogic';
 import { usePdvTheme } from '@/hooks/usePdvTheme';
 import PDVHeader from '@/components/pdv/PDVHeader';
-import ProductSearch from '@/components/pdv/ProductSearch';
-import ProductList from '@/components/pdv/ProductList';
-import ConsultationPanel from '@/components/pdv/ConsultationPanel';
+import PDVModeSelector from '@/components/pdv/PDVModeSelector';
+import PDVMainContent from '@/components/pdv/PDVMainContent';
+import PDVKeyboardHandler from '@/components/pdv/PDVKeyboardHandler';
+import PDVFullscreenManager from '@/components/pdv/PDVFullscreenManager';
 import { SangriaDialog } from '@/components/pdv/SangriaDialog';
-import ShortcutPanel from '@/components/pdv/ShortcutPanel';
-import CartTable from '@/components/pdv/CartTable';
 import PaymentPanel from '@/components/pdv/PaymentPanel';
 
 const PDV = () => {
@@ -49,51 +48,6 @@ const PDV = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Lógica de Tela Cheia
-  useEffect(() => {
-    const enterFullscreen = () => {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
-    };
-    const exitFullscreen = () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      }
-    };
-
-    if (caixaAberto) enterFullscreen();
-    else exitFullscreen();
-
-    return () => exitFullscreen();
-  }, [caixaAberto]);
-
-  // Lógica de Atalhos do Teclado
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!caixaAberto) return;
-    switch (event.key) {
-      case 'F2':
-        event.preventDefault();
-        setIsPaymentModalOpen(true);
-        break;
-      case 'F5':
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        break;
-      case 'F9':
-        event.preventDefault();
-        limparCarrinho();
-        break;
-    }
-  }, [caixaAberto, limparCarrinho]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
   const handleFinalizarVenda = (dadosVenda: any) => {
     finalizarVenda(dadosVenda);
     setIsPaymentModalOpen(false);
@@ -123,6 +77,16 @@ const PDV = () => {
 
   return (
     <div className={`p-4 min-h-screen group ${theme} group-[.pdv-classic]:bg-slate-400 group-[.pdv-classic]:font-sans`}>
+      {/* Manager Components */}
+      <PDVFullscreenManager caixaAberto={caixaAberto} />
+      <PDVKeyboardHandler 
+        caixaAberto={caixaAberto}
+        limparCarrinho={limparCarrinho}
+        setIsPaymentModalOpen={setIsPaymentModalOpen}
+        searchInputRef={searchInputRef}
+      />
+
+      {/* Header */}
       <PDVHeader 
         caixaAberto={caixaAberto}
         onAbrirCaixa={abrirCaixa}
@@ -130,68 +94,36 @@ const PDV = () => {
         onToggleTheme={toggleTheme}
       />
 
-      {modoConsulta ? (
-         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <ProductSearch 
-                onSearchChange={setSearchTerm} 
-                modoConsulta={true} 
-                onModoConsultaChange={setModoConsulta} 
-                caixaAberto={caixaAberto} 
-              />
-              <ProductList 
-                produtos={produtosFiltrados}
-                onAdicionarAoCarrinho={adicionarAoCarrinho}
-                caixaAberto={caixaAberto}
-                modoConsulta={modoConsulta}
-              />
-            </div>
-            <div className="space-y-6">
-              <ConsultationPanel />
-            </div>
-         </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
-          {/* Coluna Esquerda */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <ProductSearch
-              onSearchChange={setSearchTerm}
-              modoConsulta={modoConsulta}
-              onModoConsultaChange={setModoConsulta}
-              caixaAberto={caixaAberto}
-              ref={searchInputRef}
-            />
-            
-            {searchTerm && (
-              <ProductList 
-                produtos={produtosFiltrados}
-                onAdicionarAoCarrinho={adicionarAoCarrinho}
-                caixaAberto={caixaAberto}
-                modoConsulta={modoConsulta}
-              />
-            )}
-            
-            <ShortcutPanel 
-              onFinalizeSale={() => setIsPaymentModalOpen(true)}
-              onCancelSale={limparCarrinho}
-              onSearchProduct={() => searchInputRef.current?.focus()}
-              caixaAberto={caixaAberto}
-            />
-          </div>
+      {/* Content */}
+      <PDVModeSelector 
+        modoConsulta={modoConsulta}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        setModoConsulta={setModoConsulta}
+        caixaAberto={caixaAberto}
+        produtosFiltrados={produtosFiltrados}
+        adicionarAoCarrinho={adicionarAoCarrinho}
+      />
 
-          {/* Coluna Direita */}
-          <div className="lg:col-span-5 flex flex-col gap-6 h-full">
-              <CartTable 
-                carrinho={carrinho}
-                onRemoverDoCarrinho={removerDoCarrinho}
-                onAlterarQuantidade={alterarQuantidade}
-                caixaAberto={caixaAberto}
-                desconto={desconto}
-              />
-          </div>
-        </div>
+      {!modoConsulta && (
+        <PDVMainContent 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          modoConsulta={modoConsulta}
+          setModoConsulta={setModoConsulta}
+          caixaAberto={caixaAberto}
+          produtosFiltrados={produtosFiltrados}
+          adicionarAoCarrinho={adicionarAoCarrinho}
+          carrinho={carrinho}
+          removerDoCarrinho={removerDoCarrinho}
+          alterarQuantidade={alterarQuantidade}
+          limparCarrinho={limparCarrinho}
+          desconto={desconto}
+          setIsPaymentModalOpen={setIsPaymentModalOpen}
+        />
       )}
 
+      {/* Modals */}
       {isPaymentModalOpen && (
         <PaymentPanel 
           carrinho={carrinho}
