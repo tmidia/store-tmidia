@@ -5,6 +5,7 @@ export interface CartItem {
   quantidade: number;
   nome: string;
   codigo: string;
+  code: string;
   estoque: number;
 }
 
