@@ -45,35 +45,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Iniciando tentativa de login para:', email);
-      
-      // Verificar se o usuário existe primeiro
-      const { data: existingUser, error: userCheckError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', '(SELECT id FROM auth.users WHERE email = $1)')
-        .single();
-      
-      console.log('👤 Verificação de usuário:', { existingUser, userCheckError });
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       });
 
-      console.log('🔑 Resposta do login:', { 
-        user: data.user?.id, 
-        session: !!data.session,
-        error: error?.message 
-      });
-
       if (error) {
-        console.error('❌ Erro detalhado no login:', {
-          message: error.message,
-          status: error.status,
-          details: error
-        });
-        
         let errorMessage = "Erro no login";
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
@@ -81,10 +58,8 @@ const Login = () => {
           errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
         } else if (error.message.includes('Too many requests')) {
           errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
-        } else if (error.message.includes('Database error')) {
-          errorMessage = "Erro temporário do sistema. Tente novamente em alguns instantes.";
         } else {
-          errorMessage = `Erro específico: ${error.message}`;
+          errorMessage = error.message;
         }
         
         toast({
@@ -92,17 +67,15 @@ const Login = () => {
           description: errorMessage,
           variant: "destructive",
         });
-      } else if (data.user && data.session) {
-        console.log('✅ Login realizado com sucesso para:', data.user.email);
-        
-        // Verificar se o perfil foi criado/atualizado
-        const { data: profile, error: profileError } = await supabase
+        return;
+      }
+      
+      if (data.user && data.session) {
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('full_name')
           .eq('id', data.user.id)
           .single();
-        
-        console.log('👤 Perfil do usuário:', { profile, profileError });
         
         toast({
           title: "Login realizado com sucesso!",
@@ -112,7 +85,6 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      console.error('💥 Erro inesperado no login:', error);
       toast({
         title: "Erro no login",
         description: `Erro inesperado: ${error.message}`,
