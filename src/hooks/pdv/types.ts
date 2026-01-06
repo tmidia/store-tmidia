@@ -1,6 +1,10 @@
-
 export interface CartItem {
   id: string;
+  product_id: string;
+  variation_id?: string;
+  variation_name?: string;
+  category_id?: string;
+  subcategory_id?: string;
   preco: number;
   quantidade: number;
   nome: string;

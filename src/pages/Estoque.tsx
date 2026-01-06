@@ -39,7 +39,7 @@ const Estoque = () => {
           code,
           stock_quantity,
           minimum_stock,
-          categories(name)
+          categories!category_id(name)
         `)
         .order('name');
 

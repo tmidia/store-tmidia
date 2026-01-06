@@ -1,128 +1,97 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Plus, 
   Search, 
   Edit, 
   Trash2, 
-  Tag
+  Tag,
+  ChevronRight,
+  FolderOpen,
+  Folder
 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useCategories, type Category } from '@/hooks/useCategories';
 import CategoryDialog from '@/components/CategoryDialog';
-
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
 
 const Categorias = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isCreatingSubcategory, setIsCreatingSubcategory] = useState(false);
+  const [parentCategoryId, setParentCategoryId] = useState<string>('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const { 
+    mainCategories, 
+    loading, 
+    saveCategory, 
+    deleteCategory,
+    getSubcategories,
+    getCategoriesWithSubcategories
+  } = useCategories();
 
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-      toast({
-        title: "Erro ao carregar categorias",
-        description: "Não foi possível carregar a lista de categorias.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveCategory = async (categoryData: any) => {
-    try {
-      if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(categoryData)
-          .eq('id', editingCategory.id);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Categoria atualizada!",
-          description: "As alterações foram salvas com sucesso.",
-        });
-      } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert([categoryData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Categoria cadastrada!",
-          description: "Nova categoria adicionada ao sistema.",
-        });
-      }
-      
+  const handleSaveCategory = async (categoryData: { name: string; description?: string | null; parent_id?: string | null }) => {
+    const success = await saveCategory(categoryData, editingCategory);
+    if (success) {
       setIsDialogOpen(false);
       setEditingCategory(null);
-      fetchCategories();
-    } catch (error) {
-      console.error('Erro ao salvar categoria:', error);
-      toast({
-        title: "Erro ao salvar categoria",
-        description: "Não foi possível salvar a categoria. Tente novamente.",
-        variant: "destructive",
-      });
+      setIsCreatingSubcategory(false);
+      setParentCategoryId('');
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Categoria removida!",
-        description: "A categoria foi excluída do sistema.",
-        variant: "destructive",
-      });
-      
-      fetchCategories();
-    } catch (error) {
-      console.error('Erro ao excluir categoria:', error);
-      toast({
-        title: "Erro ao excluir categoria",
-        description: "Não foi possível excluir a categoria. Tente novamente.",
-        variant: "destructive",
-      });
-    }
+    await deleteCategory(id);
   };
 
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleNewCategory = () => {
+    setEditingCategory(null);
+    setIsCreatingSubcategory(false);
+    setParentCategoryId('');
+    setIsDialogOpen(true);
+  };
+
+  const handleNewSubcategory = (parentId: string) => {
+    setEditingCategory(null);
+    setIsCreatingSubcategory(true);
+    setParentCategoryId(parentId);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setIsCreatingSubcategory(!!category.parent_id);
+    setParentCategoryId(category.parent_id || '');
+    setIsDialogOpen(true);
+  };
+
+  const toggleExpanded = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  const categoriesWithSubs = getCategoriesWithSubcategories();
+
+  const filteredCategories = categoriesWithSubs.filter(category => {
+    const matchesMain = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       category.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSub = category.subcategories.some(sub => 
+      sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    return matchesMain || matchesSub;
+  });
 
   if (loading) {
     return (
@@ -138,11 +107,11 @@ const Categorias = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
-          <p className="text-gray-600 mt-1">Gerencie as categorias dos produtos</p>
+          <p className="text-gray-600 mt-1">Gerencie categorias e subcategorias dos produtos</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-blue-dark" onClick={() => setEditingCategory(null)}>
+            <Button className="bg-primary hover:bg-primary/90" onClick={handleNewCategory}>
               <Plus className="w-4 h-4 mr-2" />
               Nova Categoria
             </Button>
@@ -156,7 +125,7 @@ const Categorias = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Buscar categoria por nome ou descrição..."
+              placeholder="Buscar categoria ou subcategoria..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -166,49 +135,112 @@ const Categorias = () => {
       </Card>
 
       {/* Lista de Categorias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCategories.map(category => (
-          <Card key={category.id} className="border-0 shadow-md bg-white hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
-                <Tag className="w-5 h-5 mr-2" />
-                {category.name}
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {category.description && (
-                <div>
-                  <p className="text-xs text-gray-600">Descrição</p>
-                  <p className="text-sm text-gray-900">{category.description}</p>
-                </div>
-              )}
+      <div className="space-y-4">
+        {filteredCategories.map(category => {
+          const isExpanded = expandedCategories.has(category.id);
+          const hasSubcategories = category.subcategories.length > 0;
+          
+          return (
+            <Card key={category.id} className="border-0 shadow-md bg-white">
+              <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {hasSubcategories && (
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="p-1 h-auto">
+                            <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          </Button>
+                        </CollapsibleTrigger>
+                      )}
+                      {hasSubcategories ? (
+                        <FolderOpen className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Folder className="w-5 h-5 text-gray-400" />
+                      )}
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        {category.name}
+                      </CardTitle>
+                      {hasSubcategories && (
+                        <span className="text-sm text-gray-500">
+                          ({category.subcategories.length} subcategoria{category.subcategories.length > 1 ? 's' : ''})
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleNewSubcategory(category.id)}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Subcategoria
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditCategory(category)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDeleteCategory(category.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {category.description && (
+                    <p className="text-sm text-gray-600 mt-2 ml-8">{category.description}</p>
+                  )}
+                </CardHeader>
 
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => {
-                    setEditingCategory(category);
-                    setIsDialogOpen(true);
-                  }}
-                >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Editar
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => handleDeleteCategory(category.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {hasSubcategories && (
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 pb-4">
+                      <div className="ml-8 space-y-2 border-l-2 border-gray-200 pl-4">
+                        {category.subcategories.map(sub => (
+                          <div 
+                            key={sub.id} 
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Tag className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium">{sub.name}</span>
+                              {sub.description && (
+                                <span className="text-sm text-gray-500">- {sub.description}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditCategory(sub)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteCategory(sub.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredCategories.length === 0 && (
@@ -223,9 +255,17 @@ const Categorias = () => {
 
       <CategoryDialog 
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setEditingCategory(null);
+          setIsCreatingSubcategory(false);
+          setParentCategoryId('');
+        }}
         category={editingCategory}
         onSave={handleSaveCategory}
+        mainCategories={mainCategories}
+        isSubcategory={isCreatingSubcategory}
+        parentCategoryId={parentCategoryId}
       />
     </div>
   );
