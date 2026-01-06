@@ -32,8 +32,8 @@ export const InventoryReport = () => {
         .from('products')
         .select(`
           *,
-          categories (name),
-          suppliers (name)
+          categories!category_id(name),
+          suppliers(name)
         `);
 
       if (error) throw error;

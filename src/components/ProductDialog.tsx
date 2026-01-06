@@ -114,6 +114,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
       code: '',
       description: '',
       category_id: '',
+      subcategory_id: '',
       supplier_id: '',
       cost_price: '',
       sale_price: '',
@@ -159,6 +160,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
         code: formData.code,
         description: formData.description || null,
         category_id: formData.category_id || null,
+        subcategory_id: formData.subcategory_id || null,
         supplier_id: formData.supplier_id || null,
         cost_price: parseFloat(formData.cost_price) || 0,
         sale_price: parseFloat(formData.sale_price) || 0,
@@ -204,12 +206,12 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
 
           <ProductCategorization
             categoryId={formData.category_id}
+            subcategoryId={formData.subcategory_id}
             supplierId={formData.supplier_id}
-            categories={categories}
             suppliers={suppliers}
             setFormData={setFormData}
           />
-          
+
           <ProductPricing
             formData={formData}
             useMargin={useMargin}

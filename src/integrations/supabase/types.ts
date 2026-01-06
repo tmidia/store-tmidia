@@ -180,6 +180,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          parent_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -187,6 +188,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          parent_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -194,9 +196,18 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_settings: {
         Row: {
@@ -350,6 +361,59 @@ export type Database = {
         }
         Relationships: []
       }
+      product_variations: {
+        Row: {
+          attributes: Json | null
+          cost_price: number
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          minimum_stock: number
+          product_id: string
+          sale_price: number
+          sku: string
+          stock_quantity: number
+          updated_at: string | null
+          variation_name: string
+        }
+        Insert: {
+          attributes?: Json | null
+          cost_price?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_stock?: number
+          product_id: string
+          sale_price?: number
+          sku: string
+          stock_quantity?: number
+          updated_at?: string | null
+          variation_name: string
+        }
+        Update: {
+          attributes?: Json | null
+          cost_price?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          minimum_stock?: number
+          product_id?: string
+          sale_price?: number
+          sku?: string
+          stock_quantity?: number
+          updated_at?: string | null
+          variation_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
@@ -362,6 +426,7 @@ export type Database = {
           name: string
           sale_price: number
           stock_quantity: number
+          subcategory_id: string | null
           supplier_id: string | null
           updated_at: string | null
         }
@@ -376,6 +441,7 @@ export type Database = {
           name: string
           sale_price?: number
           stock_quantity?: number
+          subcategory_id?: string | null
           supplier_id?: string | null
           updated_at?: string | null
         }
@@ -390,6 +456,7 @@ export type Database = {
           name?: string
           sale_price?: number
           stock_quantity?: number
+          subcategory_id?: string | null
           supplier_id?: string | null
           updated_at?: string | null
         }
@@ -397,6 +464,13 @@ export type Database = {
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
@@ -448,6 +522,90 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      sales_items: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          product_code: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          subcategory_id: string | null
+          total_price: number
+          transaction_id: string
+          unit_price: number
+          variation_id: string | null
+          variation_name: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_code: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          subcategory_id?: string | null
+          total_price?: number
+          transaction_id: string
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_code?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          subcategory_id?: string | null
+          total_price?: number
+          transaction_id?: string
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_items_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_items_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppliers: {
         Row: {
