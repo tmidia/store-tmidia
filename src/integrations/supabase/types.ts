@@ -127,6 +127,80 @@ export type Database = {
         }
         Relationships: []
       }
+      caravan_payments: {
+        Row: {
+          amount: number
+          caravan_id: string | null
+          date: string | null
+          id: string
+          note: string | null
+          receipt_url: string | null
+        }
+        Insert: {
+          amount: number
+          caravan_id?: string | null
+          date?: string | null
+          id?: string
+          note?: string | null
+          receipt_url?: string | null
+        }
+        Update: {
+          amount?: number
+          caravan_id?: string | null
+          date?: string | null
+          id?: string
+          note?: string | null
+          receipt_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caravan_payments_caravan_id_fkey"
+            columns: ["caravan_id"]
+            isOneToOne: false
+            referencedRelation: "caravans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      caravans: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          id: string
+          leader_name: string
+          leader_phone: string | null
+          pastor_name: string | null
+          people_count: number | null
+          status: string | null
+          total_value: number | null
+          value_paid: number | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          leader_name: string
+          leader_phone?: string | null
+          pastor_name?: string | null
+          people_count?: number | null
+          status?: string | null
+          total_value?: number | null
+          value_paid?: number | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          leader_name?: string
+          leader_phone?: string | null
+          pastor_name?: string | null
+          people_count?: number | null
+          status?: string | null
+          total_value?: number | null
+          value_paid?: number | null
+        }
+        Relationships: []
+      }
       cash_sessions: {
         Row: {
           closed_at: string | null
@@ -209,6 +283,24 @@ export type Database = {
           },
         ]
       }
+      church_fields: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           cnpj: string | null
@@ -236,6 +328,78 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      congregations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      event_settings: {
+        Row: {
+          date: string | null
+          event_start_date: string | null
+          evolution_api_key: string | null
+          evolution_api_url: string | null
+          evolution_instance: string | null
+          footer_image_url: string | null
+          footer_text: string | null
+          id: number
+          location: string | null
+          n8n_webhook_url: string | null
+          price: number | null
+          show_countdown: boolean | null
+          theme: string | null
+          treasurer_phone: string | null
+          video_url: string | null
+        }
+        Insert: {
+          date?: string | null
+          event_start_date?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          footer_image_url?: string | null
+          footer_text?: string | null
+          id?: number
+          location?: string | null
+          n8n_webhook_url?: string | null
+          price?: number | null
+          show_countdown?: boolean | null
+          theme?: string | null
+          treasurer_phone?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          date?: string | null
+          event_start_date?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          footer_image_url?: string | null
+          footer_text?: string | null
+          id?: number
+          location?: string | null
+          n8n_webhook_url?: string | null
+          price?: number | null
+          show_countdown?: boolean | null
+          theme?: string | null
+          treasurer_phone?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -315,6 +479,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      individual_payments: {
+        Row: {
+          amount: number
+          date: string | null
+          id: string
+          individual_id: string | null
+          note: string | null
+          receipt_url: string | null
+        }
+        Insert: {
+          amount: number
+          date?: string | null
+          id?: string
+          individual_id?: string | null
+          note?: string | null
+          receipt_url?: string | null
+        }
+        Update: {
+          amount?: number
+          date?: string | null
+          id?: string
+          individual_id?: string | null
+          note?: string | null
+          receipt_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "individual_payments_individual_id_fkey"
+            columns: ["individual_id"]
+            isOneToOne: false
+            referencedRelation: "individuals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      individuals: {
+        Row: {
+          congregation: string | null
+          created_at: string | null
+          field: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          status: string | null
+          total_value: number | null
+          value_paid: number | null
+        }
+        Insert: {
+          congregation?: string | null
+          created_at?: string | null
+          field?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          total_value?: number | null
+          value_paid?: number | null
+        }
+        Update: {
+          congregation?: string | null
+          created_at?: string | null
+          field?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          status?: string | null
+          total_value?: number | null
+          value_paid?: number | null
+        }
+        Relationships: []
       }
       integrations: {
         Row: {
@@ -725,6 +960,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          role?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
