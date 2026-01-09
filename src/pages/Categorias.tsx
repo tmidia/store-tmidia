@@ -1,9 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   Plus, 
   Search, 
@@ -12,7 +23,8 @@ import {
   Tag,
   ChevronRight,
   FolderOpen,
-  Folder
+  Folder,
+  RefreshCw
 } from 'lucide-react';
 import { useCategories, type Category } from '@/hooks/useCategories';
 import CategoryDialog from '@/components/CategoryDialog';
@@ -31,7 +43,8 @@ const Categorias = () => {
     saveCategory, 
     deleteCategory,
     getSubcategories,
-    getCategoriesWithSubcategories
+    getCategoriesWithSubcategories,
+    clearAllCategories
   } = useCategories();
 
   const handleSaveCategory = async (categoryData: { name: string; description?: string | null; parent_id?: string | null }) => {
@@ -81,6 +94,10 @@ const Categorias = () => {
     });
   };
 
+  const handleClearAllCategories = async () => {
+    await clearAllCategories();
+  };
+
   const categoriesWithSubs = getCategoriesWithSubcategories();
 
   const filteredCategories = categoriesWithSubs.filter(category => {
@@ -104,19 +121,49 @@ const Categorias = () => {
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
           <p className="text-gray-600 mt-1">Gerencie categorias e subcategorias dos produtos</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleNewCategory}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Categoria
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+        <div className="flex gap-2">
+          {mainCategories.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Limpar Todas
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Limpar todas as categorias?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação irá remover todas as categorias e subcategorias do sistema. 
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearAllCategories}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Limpar Todas
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleNewCategory}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Categoria
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filtros */}

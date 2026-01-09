@@ -15,6 +15,7 @@ type Product = {
   minimum_stock: number;
   cost_price: number | null;
   categories: { name: string } | null;
+  subcategories: { name: string } | null;
   suppliers: { name: string } | null;
 };
 
@@ -33,6 +34,7 @@ export const InventoryReport = () => {
         .select(`
           *,
           categories!category_id(name),
+          subcategories:categories!subcategory_id(name),
           suppliers(name)
         `);
 
