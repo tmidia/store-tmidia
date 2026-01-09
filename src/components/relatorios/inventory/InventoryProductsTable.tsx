@@ -8,6 +8,7 @@ type Product = {
   id: string;
   name: string;
   categories: { name: string } | null;
+  subcategories: { name: string } | null;
   stock_quantity: number;
   minimum_stock: number;
   cost_price: number | null;
@@ -37,7 +38,13 @@ export const InventoryProductsTable = ({
   getStockStatus,
   formatCurrency
 }: InventoryProductsTableProps) => {
-  const headers = ["Produto", "Categoria", "Estoque", "Mínimo", "Status", "Valor Unitário", "Valor Total"];
+  const headers = ["Produto", "Categoria", "Subcategoria", "Estoque", "Mínimo", "Status", "Valor Unitário", "Valor Total"];
+
+  const getCategoryDisplay = (product: Product) => {
+    const category = product.categories?.name || '-';
+    const subcategory = product.subcategories?.name || '-';
+    return { category, subcategory };
+  };
 
   return (
     <Card>
@@ -57,6 +64,7 @@ export const InventoryProductsTable = ({
             {products.map((product) => {
               const status = getStockStatus(product);
               const totalValue = product.stock_quantity * (product.cost_price || 0);
+              const { category, subcategory } = getCategoryDisplay(product);
 
               return (
                 <ResponsiveTableRow
@@ -68,7 +76,8 @@ export const InventoryProductsTable = ({
                         <Badge variant={status.variant} className="flex-shrink-0">{status.label}</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                          <div><strong>Categoria:</strong> {product.categories?.name || '-'}</div>
+                          <div><strong>Categoria:</strong> {category}</div>
+                          <div><strong>Subcategoria:</strong> {subcategory}</div>
                           <div><strong>Estoque:</strong> {product.stock_quantity}</div>
                           <div><strong>Mínimo:</strong> {product.minimum_stock}</div>
                           <div><strong>Unitário:</strong> {formatCurrency(product.cost_price || 0)}</div>
@@ -80,7 +89,8 @@ export const InventoryProductsTable = ({
                   }
                 >
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.categories?.name || '-'}</TableCell>
+                  <TableCell>{category}</TableCell>
+                  <TableCell>{subcategory}</TableCell>
                   <TableCell>{product.stock_quantity}</TableCell>
                   <TableCell>{product.minimum_stock}</TableCell>
                   <TableCell>

@@ -138,6 +138,42 @@ export const useCategories = () => {
     }
   };
 
+  const clearAllCategories = async () => {
+    try {
+      // Primeiro, deletar subcategorias (que têm parent_id)
+      const { error: subError } = await supabase
+        .from('categories')
+        .delete()
+        .not('parent_id', 'is', null);
+
+      if (subError) throw subError;
+
+      // Depois, deletar categorias principais
+      const { error: mainError } = await supabase
+        .from('categories')
+        .delete()
+        .is('parent_id', null);
+
+      if (mainError) throw mainError;
+
+      toast({
+        title: "Categorias limpas!",
+        description: "Todas as categorias foram removidas do sistema.",
+      });
+      
+      await fetchCategories();
+      return true;
+    } catch (error) {
+      console.error('Erro ao limpar categorias:', error);
+      toast({
+        title: "Erro ao limpar categorias",
+        description: "Não foi possível limpar as categorias. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
@@ -150,6 +186,7 @@ export const useCategories = () => {
     getSubcategories,
     getCategoriesWithSubcategories,
     saveCategory,
-    deleteCategory
+    deleteCategory,
+    clearAllCategories
   };
 };
