@@ -58,7 +58,6 @@ const CategoryDialog = ({
   };
 
   const isEditingSubcategory = category?.parent_id;
-  const showParentSelect = isSubcategory || isEditingSubcategory || mainCategories.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -66,32 +65,42 @@ const CategoryDialog = ({
         <DialogHeader>
           <DialogTitle>
             {category 
-              ? (isEditingSubcategory ? 'Editar Subcategoria' : 'Editar Categoria')
-              : (isSubcategory ? 'Nova Subcategoria' : 'Nova Categoria')
+              ? (isEditingSubcategory ? 'Editar Subcategoria' : 'Editar Categoria Pai')
+              : (formData.parent_id ? 'Nova Subcategoria' : 'Nova Categoria Pai')
             }
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {showParentSelect && !category && (
+          {!category && (
             <div>
-              <Label htmlFor="parent_id">Categoria Pai (deixe vazio para categoria principal)</Label>
+              <Label htmlFor="parent_id">Tipo de Categoria</Label>
               <Select 
-                value={formData.parent_id} 
+                value={formData.parent_id || 'none'} 
                 onValueChange={(value) => setFormData({...formData, parent_id: value === 'none' ? '' : value})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria pai (opcional)" />
+                  <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhuma (Categoria Principal)</SelectItem>
-                  {mainCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="none">📁 Categoria Pai (Principal)</SelectItem>
+                  {mainCategories.length > 0 && (
+                    <>
+                      {mainCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          📂 Subcategoria de: {cat.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.parent_id 
+                  ? 'Esta será uma subcategoria vinculada à categoria selecionada'
+                  : 'Esta será uma categoria principal que pode ter subcategorias'
+                }
+              </p>
             </div>
           )}
 
