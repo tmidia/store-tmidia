@@ -38,7 +38,7 @@ export const FinancialCategories = () => {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as unknown as Array<{ id: string; name: string; type: string; color: string; description: string; created_at: string; updated_at: string }>;
     }
   });
 

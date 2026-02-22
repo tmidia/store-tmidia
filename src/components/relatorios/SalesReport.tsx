@@ -42,7 +42,7 @@ export const SalesReport = () => {
       }
 
       console.log('🏦 Sessões de caixa encontradas:', data);
-      return data || [];
+      return (data || []) as unknown as Array<{ id: string; opening_amount: number; closing_amount: number; expected_amount: number; difference: number; opened_at: string; closed_at: string; status: string; user_id: string; created_at: string; updated_at: string }>;
     }
   });
 
