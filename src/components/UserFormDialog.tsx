@@ -103,8 +103,10 @@ export const UserFormDialog = ({
       // Fechar dialog e resetar apenas após sucesso
       setIsDialogOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no formulário:', error);
+      const { toast } = await import('sonner');
+      toast.error(error?.message || 'Erro ao salvar usuário. Tente novamente.');
       // Em caso de erro, manter o dialog aberto mas permitir nova tentativa
       setIsLocalSubmitting(false);
     }
