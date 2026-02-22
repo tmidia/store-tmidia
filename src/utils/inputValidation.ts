@@ -19,8 +19,8 @@ export const validateUsername = (username: string): { isValid: boolean; message:
   if (username.length < 3) {
     return { isValid: false, message: 'Nome de usuário deve ter pelo menos 3 caracteres' };
   }
-  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-    return { isValid: false, message: 'Nome de usuário deve conter apenas letras, números e underscore' };
+  if (!/^[a-zA-Z0-9_.\-]+$/.test(username)) {
+    return { isValid: false, message: 'Nome de usuário deve conter apenas letras, números, underscore, ponto ou hífen' };
   }
   return { isValid: true, message: 'Nome de usuário válido' };
 };
