@@ -150,7 +150,7 @@ const Login = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">SGA</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Sistema de Gestão para Loja de Acessórios
+              Sistema de Gestão para Loja de Calçados e Acessórios
             </p>
           </div>
         </div>
