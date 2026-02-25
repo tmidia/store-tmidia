@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Package, 
@@ -177,12 +178,12 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Gerencie seu catálogo de produtos, preços e estoque.
             </p>
-            <a 
-              href="/produtos" 
+            <Link 
+              to="/produtos" 
               className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               Acessar Produtos →
-            </a>
+            </Link>
           </CardContent>
         </Card>
 
@@ -197,12 +198,12 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Monitore os níveis de estoque e movimentações.
             </p>
-            <a 
-              href="/estoque" 
+            <Link 
+              to="/estoque" 
               className="inline-flex items-center text-green-600 hover:text-green-700 text-sm font-medium"
             >
               Acessar Estoque →
-            </a>
+            </Link>
           </CardContent>
         </Card>
 
@@ -217,12 +218,12 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Cadastre e gerencie seus fornecedores.
             </p>
-            <a 
-              href="/fornecedores" 
+            <Link 
+              to="/fornecedores" 
               className="inline-flex items-center text-purple-600 hover:text-purple-700 text-sm font-medium"
             >
               Acessar Fornecedores →
-            </a>
+            </Link>
           </CardContent>
         </Card>
       </div>
