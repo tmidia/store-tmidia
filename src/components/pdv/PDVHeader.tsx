@@ -1,8 +1,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Palette } from 'lucide-react';
+import { Palette, ArrowLeft } from 'lucide-react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+import { useNavigate } from 'react-router-dom';
 
 interface PDVHeaderProps {
   caixaAberto: boolean;
@@ -13,14 +14,27 @@ interface PDVHeaderProps {
 
 const PDVHeader = ({ caixaAberto, onAbrirCaixa, onFecharCaixa, onToggleTheme }: PDVHeaderProps) => {
   const { userProfile } = useRoleBasedAccess();
+  const navigate = useNavigate();
   const isAdmin = userProfile?.user_type === 'superadmin';
   const classicBtnClasses = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full group-[.pdv-classic]:bg-gradient-to-b group-[.pdv-classic]:from-blue-900 group-[.pdv-classic]:to-blue-700 group-[.pdv-classic]:p-2 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-800 group-[.pdv-classic]:border-r-slate-800">
-      <div className="flex-1 min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate group-[.pdv-classic]:text-white">PDV</h1>
-        <p className="text-gray-600 mt-1 text-sm sm:text-base group-[.pdv-classic]:text-slate-300">Ponto de Venda</p>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate('/')}
+          className={`shrink-0 ${classicBtnClasses}`}
+          title="Voltar ao Dashboard"
+          disabled={caixaAberto}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate group-[.pdv-classic]:text-white">PDV</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base group-[.pdv-classic]:text-slate-300">Ponto de Venda</p>
+        </div>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
         {isAdmin && (
