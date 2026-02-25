@@ -46,7 +46,7 @@ const ProductSearch = React.forwardRef<HTMLInputElement, ProductSearchProps>(({
             variant={!modoConsulta ? "default" : "outline"}
             onClick={() => onModoConsultaChange(false)}
             className={`flex items-center gap-2 ${classicButton} group-[.pdv-classic]:data-[state=on]:bg-blue-500 group-[.pdv-classic]:data-[state=on]:text-white`}
-            disabled={!caixaAberto}
+            disabled={!caixaAberto && !modoConsulta}
             data-state={!modoConsulta ? 'on' : 'off'}
           >
             <ShoppingCart className="w-4 h-4" />
