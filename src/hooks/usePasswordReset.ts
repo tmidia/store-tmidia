@@ -46,8 +46,11 @@ export const usePasswordReset = () => {
     }
 
     try {
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/login`
+        : 'https://loja.tmidia.com.br/login';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: redirectUrl,
       });
 
       if (error) {

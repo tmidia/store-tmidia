@@ -1,1 +1,4 @@
 project_id = "brygecpknifkxrwnrdqr"
+
+[auth]
+additional_redirect_urls = ["https://loja.tmidia.com.br", "https://loja.tmidia.com.br/**"]
