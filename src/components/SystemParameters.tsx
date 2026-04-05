@@ -59,8 +59,7 @@ const SystemParameters = () => {
     setIsLoading(true);
 
     try {
-      // Exclude enable_receipt_printing until database field is added
-      const { enable_receipt_printing, ...dataToSave } = formData;
+      const dataToSave = formData;
       
       if (parameters) {
         const { error } = await supabase
