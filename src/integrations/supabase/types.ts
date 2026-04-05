@@ -569,6 +569,7 @@ export type Database = {
           allow_manual_discount: boolean
           created_at: string
           enable_pdv: boolean
+          enable_receipt_printing: boolean
           id: string
           show_daily_report: boolean
           show_dashboard_charts: boolean
@@ -580,6 +581,7 @@ export type Database = {
           allow_manual_discount?: boolean
           created_at?: string
           enable_pdv?: boolean
+          enable_receipt_printing?: boolean
           id?: string
           show_daily_report?: boolean
           show_dashboard_charts?: boolean
@@ -591,6 +593,7 @@ export type Database = {
           allow_manual_discount?: boolean
           created_at?: string
           enable_pdv?: boolean
+          enable_receipt_printing?: boolean
           id?: string
           show_daily_report?: boolean
           show_dashboard_charts?: boolean

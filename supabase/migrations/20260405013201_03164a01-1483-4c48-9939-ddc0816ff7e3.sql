@@ -1,0 +1,1 @@
+ALTER TABLE public.system_parameters ADD COLUMN IF NOT EXISTS enable_receipt_printing BOOLEAN NOT NULL DEFAULT false;

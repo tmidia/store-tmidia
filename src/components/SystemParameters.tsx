@@ -19,10 +19,12 @@ const SystemParameters = () => {
     show_low_stock_alert: true,
     show_due_accounts: true,
     show_daily_report: true,
-    enable_receipt_printing: false
+          enable_receipt_printing: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const PRINTER_MODEL = 'SMX-T80E (80mm, USB+LAN)';
 
   useEffect(() => {
     fetchParameters();
@@ -44,7 +46,7 @@ const SystemParameters = () => {
           show_low_stock_alert: data.show_low_stock_alert ?? true,
           show_due_accounts: data.show_due_accounts ?? true,
           show_daily_report: data.show_daily_report ?? true,
-          enable_receipt_printing: false // Temporarily disabled until database field is added
+          enable_receipt_printing: (data as any).enable_receipt_printing ?? false
         });
       }
     } catch (error) {
@@ -57,8 +59,7 @@ const SystemParameters = () => {
     setIsLoading(true);
 
     try {
-      // Exclude enable_receipt_printing until database field is added
-      const { enable_receipt_printing, ...dataToSave } = formData;
+      const dataToSave = formData;
       
       if (parameters) {
         const { error } = await supabase
@@ -182,15 +183,17 @@ const SystemParameters = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between opacity-50">
+            <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="enable_receipt_printing">Habilitar impressão de cupom</Label>
-                <p className="text-sm text-gray-500">Permite imprimir cupom fiscal após finalizar a venda (Em desenvolvimento)</p>
+                <p className="text-sm text-muted-foreground">
+                  Impressora térmica {PRINTER_MODEL} — imprime cupom automaticamente após finalizar a venda
+                </p>
               </div>
               <Switch
                 id="enable_receipt_printing"
-                checked={false}
-                disabled={true}
+                checked={formData.enable_receipt_printing}
+                onCheckedChange={(value) => handleSwitchChange('enable_receipt_printing', value)}
               />
             </div>
           </div>
