@@ -19,10 +19,12 @@ const SystemParameters = () => {
     show_low_stock_alert: true,
     show_due_accounts: true,
     show_daily_report: true,
-    enable_receipt_printing: false
+          enable_receipt_printing: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const PRINTER_MODEL = 'SMX-T80E (80mm, USB+LAN)';
 
   useEffect(() => {
     fetchParameters();
