@@ -46,7 +46,7 @@ const SystemParameters = () => {
           show_low_stock_alert: data.show_low_stock_alert ?? true,
           show_due_accounts: data.show_due_accounts ?? true,
           show_daily_report: data.show_daily_report ?? true,
-          enable_receipt_printing: false // Temporarily disabled until database field is added
+          enable_receipt_printing: (data as any).enable_receipt_printing ?? false
         });
       }
     } catch (error) {
