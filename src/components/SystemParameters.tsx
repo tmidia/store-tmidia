@@ -183,15 +183,17 @@ const SystemParameters = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between opacity-50">
+            <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="enable_receipt_printing">Habilitar impressão de cupom</Label>
-                <p className="text-sm text-gray-500">Permite imprimir cupom fiscal após finalizar a venda (Em desenvolvimento)</p>
+                <p className="text-sm text-muted-foreground">
+                  Impressora térmica {PRINTER_MODEL} — imprime cupom automaticamente após finalizar a venda
+                </p>
               </div>
               <Switch
                 id="enable_receipt_printing"
-                checked={false}
-                disabled={true}
+                checked={formData.enable_receipt_printing}
+                onCheckedChange={(value) => handleSwitchChange('enable_receipt_printing', value)}
               />
             </div>
           </div>
