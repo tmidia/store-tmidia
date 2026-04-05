@@ -129,6 +129,24 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
     console.log('Perfil criado/atualizado com sucesso');
 
+    // Atualizar o papel (role) do usuário na tabela user_roles
+    if (formData.user_type && formData.user_type !== 'vendedor') {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: formData.user_type as any })
+        .eq('user_id', signUpData.user.id);
+
+      if (roleError) {
+        console.error('Erro ao atualizar role:', roleError);
+        // Tentar upsert caso não exista
+        await supabase
+          .from('user_roles')
+          .upsert({ user_id: signUpData.user.id, role: formData.user_type as any });
+      } else {
+        console.log('Role atualizada com sucesso para:', formData.user_type);
+      }
+    }
+
     // Criar permissões se especificadas
     if (formData.permissions && formData.permissions.length > 0) {
       const permissions = formData.permissions.map(module => ({
