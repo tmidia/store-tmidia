@@ -22,6 +22,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          notes: string | null
           paid_amount: number | null
           remaining_amount: number | null
           status: string
@@ -36,6 +37,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          notes?: string | null
           paid_amount?: number | null
           remaining_amount?: number | null
           status?: string
@@ -50,6 +52,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          notes?: string | null
           paid_amount?: number | null
           remaining_amount?: number | null
           status?: string
