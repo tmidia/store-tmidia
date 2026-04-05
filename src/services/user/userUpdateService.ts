@@ -116,6 +116,22 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     console.log('✅ Senha atualizada com sucesso!');
   }
 
+  // Atualizar role na tabela user_roles
+  const { error: roleError } = await supabase
+    .from('user_roles')
+    .update({ role: formData.user_type as any })
+    .eq('user_id', user.id);
+
+  if (roleError) {
+    console.error('Erro ao atualizar role:', roleError);
+    // Tentar upsert caso não exista
+    await supabase
+      .from('user_roles')
+      .upsert({ user_id: user.id, role: formData.user_type as any });
+  } else {
+    console.log('Role atualizada com sucesso para:', formData.user_type);
+  }
+
   // Remover permissões existentes
   await supabase
     .from('user_permissions')
