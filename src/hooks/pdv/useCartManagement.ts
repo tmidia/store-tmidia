@@ -35,6 +35,7 @@ export const useCartManagement = (produtos: any[], caixaAberto: boolean) => {
     } else {
       setCarrinho([...carrinho, { 
         ...produto, 
+        product_id: produto.id,
         quantidade: 1,
         preco: produto.sale_price,
         nome: produto.name,

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ export const AccountsPayable = () => {
     amount: '',
     due_date: '',
     description: '',
-    category: ''
+    category_id: ''
   });
   const [paymentAmount, setPaymentAmount] = useState('');
 
@@ -45,6 +44,20 @@ export const AccountsPayable = () => {
     }
   });
 
+  // Buscar categorias financeiras de despesa
+  const { data: categories } = useQuery({
+    queryKey: ['financial-categories', 'despesa'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_categories')
+        .select('id, name')
+        .eq('type', 'despesa')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Buscar contas a pagar
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['accounts-payable'],
@@ -53,7 +66,8 @@ export const AccountsPayable = () => {
         .from('accounts_payable')
         .select(`
           *,
-          suppliers(name)
+          suppliers(name),
+          financial_categories(name)
         `)
         .order('due_date', { ascending: true });
 
@@ -74,10 +88,9 @@ export const AccountsPayable = () => {
           supplier_id: data.supplier_id || null,
           supplier_name: selectedSupplier?.name || data.supplier_name,
           amount: amount,
-          remaining_amount: amount,
           due_date: data.due_date,
           description: data.description || null,
-          category: data.category || null
+          category_id: data.category_id || null
         }]);
 
       if (error) throw error;
@@ -92,7 +105,7 @@ export const AccountsPayable = () => {
         amount: '',
         due_date: '',
         description: '',
-        category: ''
+        category_id: ''
       });
       toast.success('Conta a pagar criada com sucesso!');
     },
@@ -127,10 +140,12 @@ export const AccountsPayable = () => {
       await supabase
         .from('financial_transactions')
         .insert([{
-          type: 'pagamento',
+          type: 'despesa',
           amount: amount,
           description: `Pagamento para ${account.supplier_name}`,
           reference_id: accountId,
+          reference_type: 'accounts_payable',
+          category_id: account.category_id,
           user_id: (await supabase.auth.getUser()).data.user?.id
         }]);
     },
@@ -152,7 +167,7 @@ export const AccountsPayable = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if ((!formData.supplier_id && !formData.supplier_name) || !formData.amount || !formData.due_date) {
-      toast.error('Preencha todos os campos obrigatórios');
+      toast.error('Preencha os campos obrigatórios');
       return;
     }
     createAccount.mutate(formData);
@@ -264,18 +279,14 @@ export const AccountsPayable = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                <Select value={formData.category_id} onValueChange={(value) => setFormData({...formData, category_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fornecedores">Fornecedores</SelectItem>
-                    <SelectItem value="salarios">Salários</SelectItem>
-                    <SelectItem value="aluguel">Aluguel</SelectItem>
-                    <SelectItem value="energia">Energia Elétrica</SelectItem>
-                    <SelectItem value="telefone">Telefone/Internet</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="outras">Outras Despesas</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -334,7 +345,7 @@ export const AccountsPayable = () => {
                     <TableCell>{formatCurrency(account.amount)}</TableCell>
                     <TableCell>{formatCurrency(account.paid_amount || 0)}</TableCell>
                     <TableCell>{formatCurrency(account.remaining_amount)}</TableCell>
-                    <TableCell>{account.category || '-'}</TableCell>
+                    <TableCell>{account.financial_categories?.name || '-'}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(account.status)}>
                         {getStatusLabel(account.status)}

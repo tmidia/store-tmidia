@@ -18,21 +18,27 @@ export const usePDVLogic = () => {
   const { carrinho, adicionarAoCarrinho, removerDoCarrinho, alterarQuantidade, limparCarrinho } = useCartManagement(produtos, caixaAberto);
   const { finalizarVenda: processarVenda } = useSalesProcessing();
 
+  const [receiptData, setReceiptData] = useState<any>(null);
+
   const finalizarVenda = async (dadosVenda: any) => {
     await processarVenda(
       dadosVenda,
       carrinho,
       caixaAberto,
       sessionId,
-      () => {
-        // Limpar dados após venda bem-sucedida
-        limparCarrinho();
-        setDesconto(0);
-        setFormaPagamento('');
-        setValorRecebido('');
-        setClienteNome('');
+      (newReceiptData: any) => {
+        setReceiptData(newReceiptData);
       }
     );
+  };
+
+  const clearAndNextCustomer = () => {
+    setReceiptData(null);
+    limparCarrinho();
+    setDesconto(0);
+    setFormaPagamento('');
+    setValorRecebido('');
+    setClienteNome('');
   };
 
   // Usar useMemo para otimizar a filtragem e adicionar logs para debug
@@ -89,6 +95,8 @@ export const usePDVLogic = () => {
     abrirCaixa,
     fecharCaixa,
     realizarSangria,
-    finalizarVenda
+    finalizarVenda,
+    receiptData,
+    clearAndNextCustomer
   };
 };

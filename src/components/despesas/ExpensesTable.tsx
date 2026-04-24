@@ -68,7 +68,7 @@ export function ExpensesTable({ expenses, onEdit, onDelete }: ExpensesTableProps
 
                                 <div className="text-sm text-muted-foreground space-y-1">
                                     {(expense.suppliers?.name || expense.supplier_name) && <p><strong>Fornecedor:</strong> {expense.suppliers?.name || expense.supplier_name}</p>}
-                                    <p><strong>Categoria:</strong> {expense.category || '-'}</p>
+                                    <p><strong>Categoria:</strong> {expense.financial_categories?.name || '-'}</p>
                                     <p><strong>Vencimento:</strong> {formatDate(expense.due_date)}</p>
                                 </div>
                                 
@@ -81,7 +81,7 @@ export function ExpensesTable({ expenses, onEdit, onDelete }: ExpensesTableProps
                     >
                         <TableCell className="font-medium">{expense.description || '-'}</TableCell>
                         <TableCell>{expense.suppliers?.name || expense.supplier_name || '-'}</TableCell>
-                        <TableCell>{expense.category || '-'}</TableCell>
+                        <TableCell>{expense.financial_categories?.name || '-'}</TableCell>
                         <TableCell>{formatDate(expense.due_date)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                         <TableCell>

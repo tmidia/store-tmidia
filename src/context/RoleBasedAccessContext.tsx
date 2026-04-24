@@ -66,16 +66,6 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
         // Fix: enforce correct type for permissions (ModuleName[])
         const loadedPerms = (permissions?.map((p) => p.module).filter(Boolean) ?? []) as ModuleName[];
 
-        console.log('[RoleBasedAccess] Perfil cargado', {
-          id: profile.id,
-          user_type: profile.user_type,
-          is_active: profile.is_active,
-          permissions: loadedPerms,
-          full_name: profile.full_name,
-          username: profile.username,
-          avatar_url: profile.avatar_url,
-        });
-
         setUserProfile({
           id: profile.id,
           user_type: profile.user_type,
@@ -95,9 +85,7 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
   }, [user]);
 
   const hasRole = (role: UserType): boolean => {
-    const result = userProfile?.user_type === role;
-    console.log('[RoleBasedAccess] hasRole', { want: role, user_type: userProfile?.user_type, result });
-    return result;
+    return userProfile?.user_type === role;
   };
 
   // AJUSTE: permitir string simples e tolerância a tipos
@@ -108,7 +96,6 @@ export function RoleBasedAccessProvider({ children }: { children: React.ReactNod
     const permsArr: string[] = Array.isArray(userProfile.permissions) ? userProfile.permissions : [];
     // MUDANÇA: apenas superadmins podem acessar configurações, não mais gerentes
     const has = permsArr.includes(plainModule) || (plainModule !== 'configuracoes' && isAdmin());
-    console.log('[RoleBasedAccess] hasPermission', { module: plainModule, perms: permsArr, user_type: userProfile?.user_type, has, isSuperAdmin: isSuperAdmin() });
     return has;
   };
 

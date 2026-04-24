@@ -32,16 +32,19 @@ export const useCashManagement = () => {
     }
   }, []);
 
-  const abrirCaixa = async () => {
-    const valorInicial = prompt("Digite o valor inicial do caixa:");
+  const abrirCaixa = async (valorInicialInput: string = "0") => {
+    const valorInicial = valorInicialInput.replace(',', '.');
     if (valorInicial && !isNaN(parseFloat(valorInicial))) {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+
         // Salvar sessão de caixa no banco de dados
         const { data, error } = await supabase
           .from('cash_sessions')
           .insert({
             opening_amount: parseFloat(valorInicial),
-            status: 'open'
+            status: 'aberta',
+            user_id: user?.id
           })
           .select()
           .single();
@@ -81,14 +84,13 @@ export const useCashManagement = () => {
     }
   };
 
-  const fecharCaixa = async () => {
-    const valorFinalPrompt = prompt("Digite o valor final do caixa:");
-    if (valorFinalPrompt === null) {
+  const fecharCaixa = async (valorFinalInput: string = "0") => {
+    if (valorFinalInput === null) {
       console.log('Fechamento de caixa cancelado pelo usuário.');
-      return; // User cancelled
+      return; 
     }
 
-    const valorFinal = parseFloat(valorFinalPrompt);
+    const valorFinal = parseFloat(valorFinalInput.replace(',', '.'));
     if (isNaN(valorFinal)) {
       toast({
         title: "Valor inválido",
@@ -162,7 +164,7 @@ export const useCashManagement = () => {
           expected_amount: valorEsperado,
           difference: diferenca,
           closed_at: new Date().toISOString(),
-          status: 'closed'
+          status: 'fechada'
         })
         .eq('id', sessionId);
 

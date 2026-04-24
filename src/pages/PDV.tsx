@@ -12,6 +12,7 @@ import PDVKeyboardHandler from '@/components/pdv/PDVKeyboardHandler';
 import PDVFullscreenManager from '@/components/pdv/PDVFullscreenManager';
 import { SangriaDialog } from '@/components/pdv/SangriaDialog';
 import PaymentPanel from '@/components/pdv/PaymentPanel';
+import ReceiptModal from '@/components/pdv/ReceiptModal';
 
 const PDV = () => {
   const { isPDVEnabled } = useSystemParameters();
@@ -41,6 +42,8 @@ const PDV = () => {
     fecharCaixa,
     realizarSangria,
     finalizarVenda,
+    receiptData,
+    clearAndNextCustomer
   } = usePDVLogic();
   
   const { theme, toggleTheme } = usePdvTheme();
@@ -52,6 +55,23 @@ const PDV = () => {
     finalizarVenda(dadosVenda);
     setIsPaymentModalOpen(false);
   };
+
+  const handleCancelSale = () => {
+    if (carrinho.length === 0) return;
+    if (window.confirm('Deseja realmente cancelar a venda e limpar o carrinho?')) {
+      limparCarrinho();
+    }
+  };
+
+  const handleToggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  };
+
+
 
   if (!isPDVEnabled()) {
     return (
@@ -79,11 +99,13 @@ const PDV = () => {
     <div className={`p-4 min-h-screen group ${theme} group-[.pdv-classic]:bg-slate-400 group-[.pdv-classic]:font-sans`}>
       {/* Manager Components */}
       <PDVFullscreenManager caixaAberto={caixaAberto} />
-      <PDVKeyboardHandler 
+      <PDVKeyboardHandler
         caixaAberto={caixaAberto}
-        limparCarrinho={limparCarrinho}
+        onCancelSale={handleCancelSale}
         setIsPaymentModalOpen={setIsPaymentModalOpen}
+        isPaymentModalOpen={isPaymentModalOpen}
         searchInputRef={searchInputRef}
+        onToggleFullscreen={handleToggleFullscreen}
       />
 
       {/* Header */}
@@ -106,7 +128,7 @@ const PDV = () => {
       />
 
       {!modoConsulta && (
-        <PDVMainContent 
+        <PDVMainContent
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           modoConsulta={modoConsulta}
@@ -120,6 +142,9 @@ const PDV = () => {
           limparCarrinho={limparCarrinho}
           desconto={desconto}
           setIsPaymentModalOpen={setIsPaymentModalOpen}
+          searchInputRef={searchInputRef}
+          onCancelSale={handleCancelSale}
+          onToggleFullscreen={handleToggleFullscreen}
         />
       )}
 
@@ -145,6 +170,15 @@ const PDV = () => {
         onOpenChange={setIsSangriaDialogOpen}
         onSubmit={realizarSangria}
       />
+
+      {receiptData && (
+        <ReceiptModal
+          isOpen={!!receiptData}
+          onClose={clearAndNextCustomer}
+          receiptData={receiptData}
+          autoPrint={true}
+        />
+      )}
     </div>
   );
 };

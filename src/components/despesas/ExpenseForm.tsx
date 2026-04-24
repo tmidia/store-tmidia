@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -24,7 +23,7 @@ const expenseSchema = z.object({
   amount: z.coerce.number().positive({ message: 'O valor deve ser um número positivo.' }),
   due_date: z.date({ required_error: 'A data de vencimento é obrigatória.' }),
   status: z.enum(['pendente', 'pago', 'vencido', 'cancelado']),
-  category: z.string().optional(),
+  category_id: z.string().uuid().optional().nullable(),
   supplier_id: z.string().uuid().optional().nullable(),
   notes: z.string().optional(),
 });
@@ -47,7 +46,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
     amount: 0,
     due_date: new Date(),
     status: 'pendente' as const,
-    category: '',
+    category_id: null,
     supplier_id: null,
     notes: '',
   };
@@ -59,7 +58,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
         amount: expense.amount || 0,
         due_date: expense.due_date ? new Date(expense.due_date) : new Date(),
         status: (expense.status || 'pendente') as 'pendente' | 'pago' | 'vencido' | 'cancelado',
-        category: expense.category || '',
+        category_id: expense.category_id || null,
         supplier_id: expense.supplier_id || null,
         notes: expense.notes || '',
     } : defaultValues,
@@ -72,7 +71,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
         amount: expense.amount || 0,
         due_date: expense.due_date ? new Date(expense.due_date) : new Date(),
         status: (expense.status || 'pendente') as 'pendente' | 'pago' | 'vencido' | 'cancelado',
-        category: expense.category || '',
+        category_id: expense.category_id || null,
         supplier_id: expense.supplier_id || null,
         notes: expense.notes || '',
       });
@@ -90,10 +89,9 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
       amount: data.amount,
       due_date: data.due_date.toISOString(),
       status: data.status,
-      category: data.category,
+      category_id: data.category_id,
       supplier_id: data.supplier_id || null,
       notes: data.notes,
-      remaining_amount: data.amount,
       supplier_name: selectedSupplier?.name ?? '',
     };
 
@@ -219,7 +217,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
             />
             <FormField
               control={form.control}
-              name="category"
+              name="category_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>

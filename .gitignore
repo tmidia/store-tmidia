@@ -12,6 +12,25 @@ dist
 dist-ssr
 *.local
 
+# Secrets e variáveis de ambiente (configurar no Vercel)
+.env
+.env.local
+.env.*.local
+
+# Electron build outputs
+release/
+out/
+
+# Drivers de hardware (instalador do Windows, não é código do projeto)
+Drive/
+
+# Configuração local do Claude Code
+.claude/
+
+# Arquivos temporários
+tmp_*
+*.tmp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

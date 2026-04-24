@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReceiptItem {
   id: string;
@@ -26,6 +26,16 @@ interface ReceiptData {
   numeroVenda: string;
 }
 
+interface CompanyInfo {
+  company_name: string;
+  cnpj: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  receipt_footer: string;
+}
+
 interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,138 +55,184 @@ const formatFormaPagamento = (forma: string) => {
   return formas[forma] || forma;
 };
 
-/**
- * Gera o HTML do cupom formatado para impressora térmica 80mm (SMX-T80E)
- * Paper width: 80mm (~302px at 96dpi)
- * Usa fonte monospace para alinhamento correto
- */
-const generateThermalReceiptHTML = (data: ReceiptData): string => {
-  const itemsHTML = data.items.map(item => `
-    <tr>
-      <td style="text-align:left;font-size:11px;padding:1px 0;">${item.codigo}</td>
-      <td style="text-align:left;font-size:11px;padding:1px 0;">${item.nome.substring(0, 18)}</td>
-      <td style="text-align:center;font-size:11px;padding:1px 0;">${item.quantidade}</td>
-      <td style="text-align:right;font-size:11px;padding:1px 0;">${(item.quantidade * item.preco).toFixed(2)}</td>
-    </tr>
-  `).join('');
-
+const generateThermalReceiptHTML = (data: ReceiptData, company: CompanyInfo): string => {
+  const formatValue = (val: number) => val.toFixed(2);
+  
   return `
+    <!DOCTYPE html>
     <html>
       <head>
-        <title>Cupom - ${data.numeroVenda}</title>
+        <meta charset="UTF-8">
         <style>
-          @page { margin: 0; size: 80mm auto; }
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            font-family: 'Courier New', 'Lucida Console', monospace;
-            font-size: 12px;
-            width: 80mm;
-            max-width: 80mm;
-            padding: 4mm 3mm;
-            color: #000;
+          * { box-sizing: border-box; }
+          html, body {
+            margin: 0; padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px; line-height: 1.4;
+            width: 302px;
+            color: #000 !important; background: #fff !important;
           }
-          .center { text-align: center; }
-          .right { text-align: right; }
+          .txt-center { text-align: center; }
+          .txt-right { text-align: right; }
           .bold { font-weight: bold; }
-          .line { border-top: 1px dashed #000; margin: 4px 0; }
-          .total-line { border-top: 2px solid #000; margin: 4px 0; }
-          table { width: 100%; border-collapse: collapse; }
-          td { padding: 1px 0; vertical-align: top; }
-          .big { font-size: 16px; font-weight: bold; }
-          .footer { margin-top: 8px; font-size: 10px; }
+          .hr { border-bottom: 1px dashed #000; margin: 4px 0; height: 1px; }
+          .hr-double { border-bottom: 2px solid #000; margin: 6px 0; height: 1px; }
+          table { width: 100%; border-collapse: collapse; margin: 2px 0; }
+          .footer { margin-top: 15px; font-size: 12px; }
         </style>
       </head>
       <body>
-        <div class="center bold" style="font-size:14px;">CUPOM DE VENDA</div>
-        <div class="center" style="font-size:10px;margin-top:2px;">
-          Impressora: SMX-T80E | 80mm
+        <div class="txt-center bold" style="font-size: 14pt;">${company.company_name.toUpperCase()}</div>
+        <div class="txt-center" style="font-size: 9pt;">
+          ${company.address ? `${company.address}<br>` : ''}
+          ${company.city ? `${company.city}${company.state ? `/${company.state}` : ''}` : ''}${company.phone ? ` - Tel: ${company.phone}` : ''}${company.cnpj ? `<br>CNPJ: ${company.cnpj}` : ''}
         </div>
-        <div class="line"></div>
-        <div style="font-size:11px;">
-          <div>Venda: <span class="bold">${data.numeroVenda}</span></div>
-          <div>Data: ${data.dataVenda.toLocaleString('pt-BR')}</div>
+        
+        <div class="hr"></div>
+        <div class="txt-center bold">CUPOM NÃO FISCAL</div>
+        <div style="font-size: 10pt;">
+          Venda: #${data.numeroVenda}<br>
+          Data: ${new Date(data.dataVenda).toLocaleString('pt-BR')}
         </div>
-        <div class="line"></div>
-        <table>
-          <tr style="font-size:11px;font-weight:bold;border-bottom:1px dashed #000;">
-            <td>COD</td><td>ITEM</td><td style="text-align:center;">QTD</td><td style="text-align:right;">VALOR</td>
-          </tr>
-          ${itemsHTML}
+        
+        <div class="hr"></div>
+        <table style="font-size: 10pt;">
+          <thead>
+            <tr class="bold">
+              <th align="left">ITEM</th>
+              <th align="right">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map(item => `
+              <tr>
+                <td colspan="2" style="padding-top: 5px;">${item.codigo} - ${item.nome.toUpperCase()}</td>
+              </tr>
+              <tr>
+                <td align="left">&nbsp;&nbsp;${item.quantidade} x R$ ${formatValue(item.preco)}</td>
+                <td align="right">R$ ${formatValue(item.quantidade * item.preco)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
         </table>
-        <div class="line"></div>
-        <table>
+        
+        <div class="hr"></div>
+        <table style="font-size: 11pt;">
           <tr>
-            <td style="font-size:11px;">Subtotal:</td>
-            <td class="right" style="font-size:11px;">R$ ${data.subtotal.toFixed(2)}</td>
+            <td>Subtotal:</td>
+            <td align="right">R$ ${formatValue(data.subtotal)}</td>
           </tr>
           ${data.desconto > 0 ? `
           <tr>
-            <td style="font-size:11px;">Desconto (${data.desconto}%):</td>
-            <td class="right" style="font-size:11px;">- R$ ${data.valorDesconto.toFixed(2)}</td>
+            <td>Desconto:</td>
+            <td align="right">- R$ ${formatValue(data.valorDesconto)}</td>
           </tr>` : ''}
-        </table>
-        <div class="total-line"></div>
-        <table>
-          <tr>
-            <td class="big">TOTAL:</td>
-            <td class="big right">R$ ${data.total.toFixed(2)}</td>
+          <tr class="bold" style="font-size: 13pt;">
+            <td>TOTAL:</td>
+            <td align="right">R$ ${formatValue(data.total)}</td>
           </tr>
         </table>
-        <div class="line"></div>
-        <table style="font-size:11px;">
+        
+        <div class="hr-double"></div>
+        <table style="font-size: 10pt;">
           <tr>
-            <td>Pagamento:</td>
-            <td class="right bold">${formatFormaPagamento(data.formaPagamento)}</td>
+            <td>PAGAMENTO:</td>
+            <td align="right" class="bold">${formatFormaPagamento(data.formaPagamento).toUpperCase()}</td>
           </tr>
           ${data.formaPagamento === 'dinheiro' ? `
           <tr>
-            <td>Recebido:</td>
-            <td class="right">R$ ${parseFloat(data.valorRecebido).toFixed(2)}</td>
+            <td>RECEBIDO:</td>
+            <td align="right">R$ ${formatValue(parseFloat(data.valorRecebido))}</td>
           </tr>
           <tr>
-            <td>Troco:</td>
-            <td class="right bold">R$ ${data.troco.toFixed(2)}</td>
+            <td>TROCO:</td>
+            <td align="right" class="bold">R$ ${formatValue(data.troco)}</td>
           </tr>` : ''}
         </table>
-        <div class="line"></div>
-        <div class="center footer">
-          <div style="font-size:11px;">Obrigado pela preferência!</div>
-          <div style="margin-top:4px;">--- FIM DO CUPOM ---</div>
+        
+        <div class="footer txt-center">
+          ${company.receipt_footer || 'Obrigado pela preferência!'}<br>
+          <br>
+          --- FIM DO CUPOM ---
+          <div style="height: 60px;"></div>
         </div>
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function() { window.close(); }, 1000);
-          }
-        </script>
       </body>
     </html>
   `;
 };
 
+const DEFAULT_COMPANY: CompanyInfo = {
+  company_name: 'Minha Loja',
+  cnpj: '',
+  phone: '',
+  address: '',
+  city: '',
+  state: '',
+  receipt_footer: 'Obrigado pela preferência!',
+};
+
 const ReceiptModal = ({ isOpen, onClose, receiptData, autoPrint = true }: ReceiptModalProps) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [hasPrinted, setHasPrinted] = useState(false);
+  const [company, setCompany] = useState<CompanyInfo>(DEFAULT_COMPANY);
+  const [companyLoaded, setCompanyLoaded] = useState(false);
 
-  // Auto-print on open
   useEffect(() => {
-    if (isOpen && autoPrint && !hasPrinted) {
+    supabase
+      .from('company_settings')
+      .select('company_name, cnpj, phone, address, city, state, receipt_footer')
+      .single()
+      .then(({ data }) => {
+        if (data) setCompany({ ...DEFAULT_COMPANY, ...data });
+        setCompanyLoaded(true);
+      });
+  }, []);
+
+  // Auto-print só depois que os dados da empresa chegam do banco
+  useEffect(() => {
+    if (isOpen && autoPrint && !hasPrinted && companyLoaded) {
       const timer = setTimeout(() => {
         handlePrint();
         setHasPrinted(true);
-      }, 500);
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoPrint, hasPrinted]);
+  }, [isOpen, autoPrint, hasPrinted, companyLoaded]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     setIsPrinting(true);
-    const printWindow = window.open('', '_blank', 'width=320,height=600');
-    if (printWindow) {
-      printWindow.document.write(generateThermalReceiptHTML(receiptData));
-      printWindow.document.close();
+
+    const electronApi = (window as any).electronAPI;
+    console.log('[PDV] Impressão - electronAPI disponível?', !!electronApi, 'printReceiptRaw?', typeof electronApi?.printReceiptRaw);
+
+    if (electronApi?.printReceiptRaw) {
+      console.log('[PDV] Usando pipeline RAW ESC/POS (Electron)');
+      try {
+        const result = await electronApi.printReceiptRaw({ data: receiptData, company });
+        if (result?.success) {
+          console.log('[PDV] Impresso com sucesso em:', result.printer);
+        } else {
+          console.error('[PDV] Falha na impressão RAW:', result?.error);
+        }
+      } catch (e) {
+        console.error('[PDV] Erro ao chamar impressão RAW:', e);
+      }
+      setIsPrinting(false);
+      return;
     }
-    setTimeout(() => setIsPrinting(false), 1500);
+
+    console.warn('[PDV] electronAPI indisponível - caindo no fallback HTML (vai abrir diálogo do Windows)');
+    const htmlContent = generateThermalReceiptHTML(receiptData, company);
+    const printWindow = window.open('', '_blank', 'width=400,height=700');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => printWindow.close(), 1000);
+      }, 300);
+    }
+    setTimeout(() => setIsPrinting(false), 2000);
   };
 
   return (
@@ -193,10 +249,18 @@ const ReceiptModal = ({ isOpen, onClose, receiptData, autoPrint = true }: Receip
 
         <div className="space-y-4 font-mono text-sm">
           <div className="text-center">
-            <h3 className="font-bold">CUPOM DE VENDA</h3>
-            <p className="text-xs text-muted-foreground">Impressora: SMX-T80E | 80mm | USB+LAN</p>
-            <p>Venda: {receiptData.numeroVenda}</p>
-            <p>Data: {receiptData.dataVenda.toLocaleString('pt-BR')}</p>
+            <h3 className="font-bold text-lg uppercase">{company.company_name}</h3>
+            {company.address && <p className="text-xs text-muted-foreground mt-1">{company.address}</p>}
+            {company.city && <p className="text-xs text-muted-foreground">{company.city}{company.state ? `/${company.state}` : ''}</p>}
+            {(company.cnpj || company.phone) && (
+              <p className="text-xs text-muted-foreground">
+                {company.cnpj ? `CNPJ: ${company.cnpj}` : ''}{company.cnpj && company.phone ? ' | ' : ''}{company.phone ? `Tel: ${company.phone}` : ''}
+              </p>
+            )}
+            <Separator className="my-3 border-dashed" />
+            <h4 className="font-bold mb-1">CUPOM NÃO FISCAL</h4>
+            <p className="text-sm">Venda: {receiptData.numeroVenda}</p>
+            <p className="text-sm">Data: {receiptData.dataVenda.toLocaleString('pt-BR')}</p>
           </div>
 
           <Separator />

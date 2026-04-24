@@ -8,6 +8,7 @@ export type ExpenseUpdate = TablesUpdate<'accounts_payable'>;
 
 export type ExpenseWithSupplier = Expense & {
     suppliers: { name: string } | null;
+    financial_categories: { name: string } | null;
 };
 
 // Fetch expenses
@@ -16,7 +17,8 @@ const fetchExpenses = async (): Promise<ExpenseWithSupplier[]> => {
         .from('accounts_payable')
         .select(`
             *,
-            suppliers ( name )
+            suppliers ( name ),
+            financial_categories ( name )
         `)
         .order('due_date', { ascending: true });
 

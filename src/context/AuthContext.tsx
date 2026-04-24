@@ -1,7 +1,9 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
 
 interface AuthContextProps {
   user: User | null;
@@ -17,22 +19,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetInactivityTimer = () => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(() => {
+      supabase.auth.signOut();
+    }, INACTIVITY_TIMEOUT_MS);
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      if (session) resetInactivityTimer();
+      else if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      if (session) resetInactivityTimer();
     });
+
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+    const handleActivity = () => { if (user) resetInactivityTimer(); };
+    events.forEach(e => window.addEventListener(e, handleActivity));
 
     return () => {
       subscription.unsubscribe();
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+      events.forEach(e => window.removeEventListener(e, handleActivity));
     };
   }, []);
 

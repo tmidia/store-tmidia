@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import LoginForm from '@/components/auth/LoginForm';
@@ -25,7 +24,6 @@ const Login = () => {
   
   const { user } = useAuth();
 
-  // Redirecionar se já estiver logado
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
@@ -34,7 +32,6 @@ const Login = () => {
 
   const {
     isNewPasswordMode,
-    setIsNewPasswordMode,
     handlePasswordReset,
     handleNewPasswordSubmit
   } = usePasswordReset();
@@ -62,7 +59,7 @@ const Login = () => {
         }
         
         toast({
-          title: "Erro no login",
+          title: "Acesso Negado",
           description: errorMessage,
           variant: "destructive",
         });
@@ -77,16 +74,16 @@ const Login = () => {
           .single();
         
         toast({
-          title: "Login realizado com sucesso!",
-          description: `Bem-vindo, ${profile?.full_name || data.user.email}!`,
+          title: "Bem-vindo de volta!",
+          description: profile?.full_name ? `Olá, ${profile.full_name}. Login realizado com sucesso.` : 'Login realizado com sucesso.',
         });
         
         navigate('/dashboard');
       }
     } catch (error: any) {
       toast({
-        title: "Erro no login",
-        description: `Erro inesperado: ${error.message}`,
+        title: "Ops!",
+        description: `Ocorreu um erro inesperado: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -97,79 +94,108 @@ const Login = () => {
   const handlePasswordResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsResetLoading(true);
-
     const success = await handlePasswordReset(email);
     if (success) {
       setIsResetMode(false);
     }
-
     setIsResetLoading(false);
   };
 
   const handleNewPasswordFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     const success = await handleNewPasswordSubmit(newPassword, confirmPassword);
     if (success) {
       setNewPassword('');
       setConfirmPassword('');
     }
-
     setIsLoading(false);
   };
 
   const getCardTitle = () => {
-    if (isNewPasswordMode) return "Nova Senha";
-    if (isResetMode) return "Recuperar Senha";
-    return "Entrar no Sistema";
+    if (isNewPasswordMode) return "Criar nova senha";
+    if (isResetMode) return "Esqueci minha senha";
+    return "Acessar Sistema";
   };
 
   const getCardDescription = () => {
-    if (isNewPasswordMode) return "Digite sua nova senha";
-    if (isResetMode) return "Digite seu email para receber as instruções de recuperação";
-    return "Digite suas credenciais para acessar o painel";
+    if (isNewPasswordMode) return "Digite e confirme a sua nova senha de acesso.";
+    if (isResetMode) return "Enviaremos um link seguro para o seu e-mail.";
+    return "Gerencie suas vendas, estoque e equipe.";
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-[hsl(210,60%,97%)] via-background to-[hsl(210,40%,94%)] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-[hsl(var(--primary)/0.06)] rounded-full blur-[80px]" />
-        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-[hsl(var(--primary)/0.04)] rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[hsl(210,60%,95%/0.5)] rounded-full blur-[120px]" />
-        {/* Subtle grid texture */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-      </div>
-
-      <div className="w-full max-w-[440px] space-y-8 relative z-10 px-1 sm:px-0">
-        {/* Logo & Branding */}
-        <div className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(210,100%,42%)] rounded-2xl flex items-center justify-center shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.35)] transform hover:scale-105 transition-all duration-300 ease-out">
-            <Package className="w-8 h-8 text-[hsl(var(--primary-foreground))]" />
+    <div className="min-h-screen flex font-inter bg-slate-50 dark:bg-slate-950">
+      {/* Lado Esquerdo - Banner com Imagem */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 overflow-hidden">
+        {/* Imagem de Fundo Premium - Unsplash Fashion/Shoes */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 hover:scale-105"
+          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop)' }}
+        />
+        
+        {/* Overlay Gradiente */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent" />
+        
+        <div className="relative z-10 flex flex-col justify-between p-12 h-full text-white">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+              <ShoppingBag className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-semibold tracking-tight shadow-sm">SGA Calçados</span>
           </div>
-          <div className="space-y-1.5">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              SGA
+
+          <div className="space-y-6 max-w-lg mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <h1 className="text-5xl font-bold tracking-tight leading-tight drop-shadow-md">
+              Gestão inteligente para sua loja.
             </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
-              Sistema de Gestão para Loja de Calçados e Acessórios
+            <p className="text-lg text-slate-300 font-light leading-relaxed drop-shadow">
+              O Ponto de Venda projetado para otimizar suas vendas, controlar seu estoque em tempo real e entregar a melhor experiência ao seu caixa.
             </p>
+            
+            <div className="flex items-center gap-4 pt-4">
+              <div className="flex -space-x-3">
+                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-200" />
+                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-400" />
+                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-600" />
+                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center text-xs font-bold text-slate-900">
+                  +2k
+                </div>
+              </div>
+              <p className="text-sm font-medium text-slate-300">Usuários aprovam</p>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Login Card */}
-        <Card className="shadow-[0_4px_40px_-8px_hsl(var(--foreground)/0.08)] border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.85)] backdrop-blur-2xl rounded-2xl overflow-hidden">
-          <CardHeader className="text-center pb-1 pt-8 px-6 sm:px-8">
-            <CardTitle className="text-xl font-semibold text-foreground tracking-tight">
+      {/* Lado Direito - Painel de Login */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
+        {/* Orbs de fundo (apenas visíveis em telas menores ou modo dark) */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="w-full max-w-[420px] space-y-8 relative z-10 animate-in fade-in slide-in-from-right-8 duration-700 delay-100">
+          
+          <div className="lg:hidden flex flex-col items-center mb-8 space-y-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-sky-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <ShoppingBag className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">SGA Calçados</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Sistema de Gestão Avançado</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-center lg:text-left">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               {getCardTitle()}
-            </CardTitle>
-            <CardDescription className="text-[13px] text-muted-foreground mt-1.5">
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {getCardDescription()}
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
 
-          <CardContent className="px-6 sm:px-8 pb-8 pt-5">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 transition-all hover:shadow-2xl">
             {isNewPasswordMode ? (
               <NewPasswordForm
                 newPassword={newPassword}
@@ -204,16 +230,10 @@ const Login = () => {
                 onForgotPassword={() => setIsResetMode(true)}
               />
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Footer */}
-        <div className="text-center space-y-1 pb-4">
-          <p className="text-[11px] text-muted-foreground/50">
-            © 2025 Sistema de Gestão para Lojas.
-          </p>
-          <p className="text-[11px] text-muted-foreground/40">
-            Desenvolvido por TMIDIA para facilitar sua gestão diária.
+          <p className="text-center text-xs text-slate-500 dark:text-slate-500 mt-8">
+            © {new Date().getFullYear()} TMIDIA. Todos os direitos reservados.
           </p>
         </div>
       </div>

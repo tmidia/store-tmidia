@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,7 +37,7 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
     if (categories?.some(c => c.name.toLowerCase() === newCategoryName.toLowerCase())) {
         const existing = categories.find(c => c.name.toLowerCase() === newCategoryName.toLowerCase());
         if(existing) {
-          onChange(existing.name);
+          onChange(existing.id);
           setOpen(false);
           setSearchValue("");
         }
@@ -51,7 +50,7 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
     }, {
         onSuccess: (newCategory) => {
             toast.success(`Categoria "${newCategory.name}" criada!`);
-            onChange(newCategory.name);
+            onChange(newCategory.id);
             setOpen(false);
             setSearchValue("");
         },
@@ -61,7 +60,7 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
     });
   };
 
-  const selectedCategoryName = value ? categories?.find(c => c.name === value)?.name : "Selecione ou crie uma categoria";
+  const selectedCategoryName = value ? categories?.find(c => c.id === value)?.name : "Selecione ou crie uma categoria";
 
   const filteredCategories = React.useMemo(() =>
     categories?.filter(c => c.name.toLowerCase().includes(searchValue.toLowerCase())) ?? [],
@@ -98,9 +97,9 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
               {filteredCategories.map((category) => (
                 <CommandItem
                   key={category.id}
-                  value={category.name}
+                  value={category.id}
                   onSelect={() => {
-                    onChange(category.name);
+                    onChange(category.id);
                     setOpen(false);
                     setSearchValue("");
                   }}
@@ -108,7 +107,7 @@ export function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === category.name ? "opacity-100" : "opacity-0"
+                      value === category.id ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {category.name}

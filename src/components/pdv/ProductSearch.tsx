@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { ShoppingCart, Search, Eye, CornerDownLeft } from 'lucide-react';
+import { ShoppingCart, Search, Eye, Barcode } from 'lucide-react';
 
 interface ProductSearchProps {
   onSearchChange: (value: string) => void;
@@ -20,71 +18,78 @@ const ProductSearch = React.forwardRef<HTMLInputElement, ProductSearchProps>(({
 }, ref) => {
   const [internalSearchTerm, setInternalSearchTerm] = useState('');
 
-  const classicCard = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none";
   const classicButton = "group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:text-black group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:hover:bg-slate-400 group-[.pdv-classic]:active:border-t-slate-500 group-[.pdv-classic]:active:border-l-slate-500 group-[.pdv-classic]:active:border-b-slate-200 group-[.pdv-classic]:active:border-r-slate-200";
   const classicInput = "group-[.pdv-classic]:bg-white group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-600 group-[.pdv-classic]:border-l-slate-600 group-[.pdv-classic]:border-b-slate-200 group-[.pdv-classic]:border-r-slate-200 group-[.pdv-classic]:shadow-inner group-[.pdv-classic]:rounded-none group-[.pdv-classic]:text-black";
 
   // Atualiza a busca em tempo real enquanto o usuário digita
   useEffect(() => {
-    onSearchChange(internalSearchTerm);
+    const delayDebounceFn = setTimeout(() => {
+       onSearchChange(internalSearchTerm);
+    }, 150);
+    return () => clearTimeout(delayDebounceFn);
   }, [internalSearchTerm, onSearchChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // O filtro já está sendo aplicado em tempo real, então apenas mantemos o foco
       (e.target as HTMLInputElement).blur();
       (e.target as HTMLInputElement).focus();
     }
   };
   
   return (
-    <Card className={`border-0 shadow-md bg-white ${classicCard}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4 mb-4">
-          <Button
-            variant={!modoConsulta ? "default" : "outline"}
-            onClick={() => onModoConsultaChange(false)}
-            className={`flex items-center gap-2 ${classicButton} group-[.pdv-classic]:data-[state=on]:bg-blue-500 group-[.pdv-classic]:data-[state=on]:text-white`}
-            disabled={!caixaAberto && !modoConsulta}
-            data-state={!modoConsulta ? 'on' : 'off'}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Modo Venda
-          </Button>
-          <Button
-            variant={modoConsulta ? "default" : "outline"}
-            onClick={() => onModoConsultaChange(true)}
-            className={`flex items-center gap-2 ${classicButton} group-[.pdv-classic]:data-[state=on]:bg-blue-500 group-[.pdv-classic]:data-[state=on]:text-white`}
-            data-state={modoConsulta ? 'on' : 'off'}
-          >
-            <Eye className="w-4 h-4" />
-            Consultar Produtos
-          </Button>
+    <div className="w-full bg-white rounded-3xl shadow-sm border border-gray-100 p-2 pl-6 pr-4 flex flex-col md:flex-row items-center gap-4 group-[.pdv-classic]:bg-slate-300 group-[.pdv-classic]:border-2 group-[.pdv-classic]:border-t-slate-200 group-[.pdv-classic]:border-l-slate-200 group-[.pdv-classic]:border-b-slate-500 group-[.pdv-classic]:border-r-slate-500 group-[.pdv-classic]:shadow-none group-[.pdv-classic]:rounded-none group-[.pdv-classic]:p-4">
+      
+      {/* Search Input Area */}
+      <div className="flex-1 w-full relative flex items-center">
+        <div className="absolute left-0 p-2 bg-slate-100 rounded-xl group-[.pdv-classic]:hidden">
+           <Barcode className="w-6 h-6 text-blue-600" />
         </div>
+        <Search className="hidden group-[.pdv-classic]:block absolute left-3 text-gray-400 w-5 h-5" />
+        <Input
+          id="product-search"
+          ref={ref}
+          placeholder={modoConsulta ? "Bipar ou buscar na tabela..." : "Bipe o CÓDIGO DE BARRAS ou digite o nome do produto [F5]"}
+          value={internalSearchTerm}
+          onChange={(e) => setInternalSearchTerm(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+          className={`pl-16 group-[.pdv-classic]:pl-10 h-16 text-lg sm:text-xl font-medium border-0 shadow-none focus-visible:ring-0 placeholder:text-slate-400 bg-transparent ${classicInput}`}
+          disabled={!caixaAberto && !modoConsulta}
+        />
+      </div>
+
+      {/* Mode Switches */}
+      <div className="flex items-center gap-2 shrink-0 border-l pl-4 border-slate-100 group-[.pdv-classic]:border-none group-[.pdv-classic]:pl-0">
+        <Button
+          variant={!modoConsulta ? "default" : "secondary"}
+          onClick={() => onModoConsultaChange(false)}
+          size="lg"
+          className={`font-semibold tracking-wide rounded-xl h-12 px-6 transition-all ${
+            !modoConsulta ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'
+          } ${classicButton} group-[.pdv-classic]:data-[state=on]:bg-blue-500 group-[.pdv-classic]:data-[state=on]:text-white`}
+          disabled={!caixaAberto && !modoConsulta}
+          data-state={!modoConsulta ? 'on' : 'off'}
+        >
+          <ShoppingCart className="w-5 h-5 mr-2" />
+          Caixa
+        </Button>
         
-        <div className="relative">
-          <label htmlFor="product-search" className="text-sm font-medium text-gray-700 group-[.pdv-classic]:text-black">
-            Localizar Produto (F5)
-          </label>
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 mt-3" />
-          <Input
-            id="product-search"
-            ref={ref}
-            placeholder={modoConsulta ? "Consultar por nome ou código..." : "Digite o código ou nome do produto..."}
-            value={internalSearchTerm}
-            onChange={(e) => setInternalSearchTerm(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`pl-10 h-12 text-lg mt-1 ${classicInput}`}
-            disabled={!caixaAberto && !modoConsulta}
-          />
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-gray-500 mt-3">
-            <span>Buscar</span>
-            <CornerDownLeft className="w-3 h-3"/>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        <Button
+          variant={modoConsulta ? "default" : "secondary"}
+          onClick={() => onModoConsultaChange(true)}
+          size="lg"
+          className={`font-semibold tracking-wide rounded-xl h-12 px-6 transition-all ${
+            modoConsulta ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'
+          } ${classicButton} group-[.pdv-classic]:data-[state=on]:bg-blue-500 group-[.pdv-classic]:data-[state=on]:text-white`}
+          data-state={modoConsulta ? 'on' : 'off'}
+        >
+          <Eye className="w-5 h-5 mr-2" />
+          Consulta
+        </Button>
+      </div>
+
+    </div>
   );
 });
 

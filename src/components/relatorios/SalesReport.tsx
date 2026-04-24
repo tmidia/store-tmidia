@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,8 +27,6 @@ export const SalesReport = () => {
       const startDate = format(appliedDateFrom, 'yyyy-MM-dd');
       const endDate = format(appliedDateTo, 'yyyy-MM-dd');
       
-      console.log('🏦 Buscando sessões de caixa para o período:', { startDate, endDate });
-
       const { data, error } = await supabase
         .from('cash_sessions')
         .select('*')
@@ -40,8 +38,6 @@ export const SalesReport = () => {
         console.error('❌ Erro ao buscar sessões de caixa:', error);
         return [];
       }
-
-      console.log('🏦 Sessões de caixa encontradas:', data);
       return (data || []) as unknown as Array<{ id: string; opening_amount: number; closing_amount: number; expected_amount: number; difference: number; opened_at: string; closed_at: string; status: string; user_id: string; created_at: string; updated_at: string }>;
     }
   });
@@ -73,26 +69,12 @@ export const SalesReport = () => {
   const { data: allTransactions } = useQuery({
     queryKey: ['all-transactions-debug'],
     queryFn: async () => {
-      console.log('🔍 Buscando TODAS as transações para debug...');
-      
       const { data: allData, error } = await supabase
         .from('financial_transactions')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Erro ao buscar todas as transações:', error);
-        return [];
-      }
-
-      console.log('📊 TODAS as transações encontradas:', allData);
-      console.log('📊 Total de transações:', allData?.length || 0);
-      
-      // Filtrar apenas vendas para mostrar no debug
-      const vendas = allData?.filter(t => t.type === 'venda') || [];
-      console.log('💰 Transações de venda encontradas:', vendas);
-      console.log('💰 Total de vendas:', vendas.length);
-
+      if (error) return [];
       return allData || [];
     }
   });
@@ -103,65 +85,23 @@ export const SalesReport = () => {
       const startDate = format(appliedDateFrom, 'yyyy-MM-dd');
       const endDate = format(appliedDateTo, 'yyyy-MM-dd');
       
-      console.log('🔍 Buscando vendas para o período:', {
-        inicio: startDate,
-        fim: endDate,
-        appliedDateFrom,
-        appliedDateTo
-      });
+      console.log('🔍 Buscando vendas para o período:', { startDate, endDate });
 
-      // Primeira consulta: buscar por tipo 'venda'
-      const { data: vendasType, error: vendasError } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .eq('type', 'venda')
-        .gte('transaction_date', startDate)
-        .lte('transaction_date', endDate)
-        .order('transaction_date', { ascending: true });
-
-      console.log('💰 Resultado busca por type="venda":', vendasType);
-      
-      // Segunda consulta: buscar por descrição contendo 'Venda'
-      const { data: vendasDesc, error: descError } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .ilike('description', '%venda%')
-        .gte('transaction_date', startDate)
-        .lte('transaction_date', endDate)
-        .order('transaction_date', { ascending: true });
-
-      console.log('💰 Resultado busca por description contendo "venda":', vendasDesc);
-
-      // Terceira consulta: buscar TODAS as transações no período
-      const { data: allInPeriod, error: allError } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .gte('transaction_date', startDate)
-        .lte('transaction_date', endDate)
-        .order('transaction_date', { ascending: true });
-
-      console.log('📊 TODAS as transações no período:', allInPeriod);
+      // Buscando na tabela sales real!
+      const { data: vendas, error: vendasError } = await supabase
+        .from('sales')
+        .select('*, sale_items(*)')
+        .gte('created_at', startDate + 'T00:00:00Z')
+        .lte('created_at', endDate + 'T23:59:59Z')
+        .order('created_at', { ascending: true });
 
       if (vendasError) {
-        console.error('❌ Erro ao buscar vendas por tipo:', vendasError);
-      }
-      if (descError) {
-        console.error('❌ Erro ao buscar vendas por descrição:', descError);
-      }
-      if (allError) {
-        console.error('❌ Erro ao buscar todas as transações:', allError);
+        console.error('❌ Erro ao buscar vendas originais:', vendasError);
       }
 
-      // Usar a consulta que retornou mais resultados
-      let transactions = vendasType || [];
-      if (vendasDesc && vendasDesc.length > transactions.length) {
-        transactions = vendasDesc;
-      }
+      const transactions = vendas || [];
 
-      console.log('📊 Transações selecionadas para processamento:', transactions);
-
-      if (!transactions || transactions.length === 0) {
-        console.log('⚠️ Nenhuma transação encontrada para o período');
+      if (transactions.length === 0) {
         return {
           chartData: [],
           totalVendas: 0,
@@ -169,23 +109,20 @@ export const SalesReport = () => {
           ticketMedio: 0,
           paymentTotals: {},
           transactions: [],
-          debugInfo: {
-            periodo: { startDate, endDate },
-            vendasType: vendasType?.length || 0,
-            vendasDesc: vendasDesc?.length || 0,
-            allInPeriod: allInPeriod?.length || 0
-          }
+          debugInfo: { period: { startDate, endDate }, count: 0 }
         };
       }
 
-      // Agrupar por data
-      const groupedData = transactions.reduce((acc: any, transaction) => {
-        const date = transaction.transaction_date;
-        if (!acc[date]) {
-          acc[date] = { date, vendas: 0, receita: 0 };
+      // Agrupar por data (usando dia do created_at)
+      const groupedData = transactions.reduce((acc: any, sale) => {
+        const dateStr = sale.created_at ? sale.created_at.split('T')[0] : '';
+        if (!dateStr) return acc;
+        
+        if (!acc[dateStr]) {
+          acc[dateStr] = { date: dateStr, vendas: 0, receita: 0 };
         }
-        acc[date].vendas += 1;
-        acc[date].receita += Number(transaction.amount || 0);
+        acc[dateStr].vendas += 1;
+        acc[dateStr].receita += Number(sale.total_amount || 0);
         return acc;
       }, {});
 
@@ -195,36 +132,20 @@ export const SalesReport = () => {
       }));
 
       // Calcular totais por forma de pagamento
-      const paymentTotals = transactions.reduce((acc: any, transaction) => {
-        let paymentMethod = 'outros';
+      const paymentTotals = transactions.reduce((acc: any, sale) => {
+        let paymentMethod = sale.payment_method || 'outros';
         
-        try {
-          if (transaction.notes) {
-            const notes = JSON.parse(transaction.notes);
-            paymentMethod = notes.forma_pagamento || 'outros';
-          }
-        } catch (e) {
-          console.log('Erro ao fazer parse das notes:', e);
-        }
-
         if (!acc[paymentMethod]) {
           acc[paymentMethod] = { total: 0, count: 0 };
         }
-        acc[paymentMethod].total += Number(transaction.amount || 0);
+        acc[paymentMethod].total += Number(sale.total_amount || 0);
         acc[paymentMethod].count += 1;
         return acc;
       }, {});
 
       const totalVendas = transactions.length;
-      const totalReceita = transactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      const totalReceita = transactions.reduce((sum, t) => sum + Number(t.total_amount || 0), 0);
       const ticketMedio = totalVendas > 0 ? totalReceita / totalVendas : 0;
-
-      console.log('Dados processados:', {
-        totalVendas,
-        totalReceita,
-        ticketMedio,
-        paymentTotals
-      });
 
       return {
         chartData,
@@ -233,34 +154,18 @@ export const SalesReport = () => {
         ticketMedio,
         paymentTotals,
         transactions,
-        debugInfo: {
-          periodo: { startDate, endDate },
-          vendasType: vendasType?.length || 0,
-          vendasDesc: vendasDesc?.length || 0,
-          allInPeriod: allInPeriod?.length || 0
-        }
+        debugInfo: { period: { startDate, endDate }, count: totalVendas }
       };
     }
   });
 
   const handleSearch = () => {
-    console.log('Aplicando filtros:', {
-      dateFrom: format(dateFrom, 'yyyy-MM-dd'),
-      dateTo: format(dateTo, 'yyyy-MM-dd')
-    });
-    
     setAppliedDateFrom(dateFrom);
     setAppliedDateTo(dateTo);
   };
 
   const exportToPDF = () => {
-    console.log('Exportando relatório de vendas para PDF...', {
-      periodo: {
-        inicio: format(appliedDateFrom, 'dd/MM/yyyy'),
-        fim: format(appliedDateTo, 'dd/MM/yyyy')
-      },
-      dados: salesData
-    });
+    console.log('Exportando...');
   };
 
   return (

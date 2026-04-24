@@ -107,10 +107,11 @@ export const AccountsReceivable = () => {
       await supabase
         .from('financial_transactions')
         .insert([{
-          type: 'recebimento',
+          type: 'receita_avulsa',
           amount: amount,
           description: `Recebimento de ${account.customer_name}`,
           reference_id: accountId,
+          reference_type: 'accounts_receivable',
           user_id: (await supabase.auth.getUser()).data.user?.id
         }]);
     },

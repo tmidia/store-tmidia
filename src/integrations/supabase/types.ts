@@ -14,10 +14,220 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          created_at: string
+          discount_amount: number
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          total_price: number
+          unit_price: number
+          variation_id: string | null
+          variation_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          product_id: string
+          product_name: string
+          quantity?: number
+          sale_id: string
+          total_price: number
+          unit_price: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          total_price?: number
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          amount_paid: number
+          cash_session_id: string | null
+          change_amount: number
+          created_at: string
+          customer_id: string | null
+          discount_amount: number
+          discount_percent: number
+          id: string
+          notes: string | null
+          payment_details: Json | null
+          payment_method: Database["public"]["Enums"]["payment_method_type"]
+          receipt_number: number
+          status: Database["public"]["Enums"]["sale_status"]
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          cash_session_id?: string | null
+          change_amount?: number
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number
+          discount_percent?: number
+          id?: string
+          notes?: string | null
+          payment_details?: Json | null
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receipt_number?: number
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          cash_session_id?: string | null
+          change_amount?: number
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number
+          discount_percent?: number
+          id?: string
+          notes?: string | null
+          payment_details?: Json | null
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receipt_number?: number
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+
       accounts_payable: {
         Row: {
           amount: number
-          category: string | null
+          category_id: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -32,7 +242,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
-          category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -47,7 +257,7 @@ export type Database = {
         }
         Update: {
           amount?: number
-          category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -66,6 +276,13 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_payable_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -659,6 +876,25 @@ export type Database = {
       }
     }
     Enums: {
+      payment_method_type:
+        | "dinheiro"
+        | "cartao_credito"
+        | "cartao_debito"
+        | "pix"
+        | "transferencia"
+        | "cheque"
+        | "crediario"
+        | "misto"
+      sale_status: "aberta" | "finalizada" | "cancelada" | "estornada"
+      session_status: "aberta" | "fechada"
+      transaction_type:
+        | "venda"
+        | "sangria"
+        | "suprimento"
+        | "despesa"
+        | "receita_avulsa"
+        | "estorno"
+
       module_permission:
         | "dashboard"
         | "pdv"
