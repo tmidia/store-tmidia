@@ -1,0 +1,44 @@
+LICENÇA DE USO DO SISTEMA SGA - PDV
+
+Copyright © 2026 T-Mídia
+Todos os direitos reservados.
+
+Este software é licenciado, não vendido, ao usuário final.
+A instalação e uso deste sistema implicam na aceitação dos termos abaixo.
+
+1. CONCESSÃO DE LICENÇA
+A T-Mídia concede ao usuário uma licença não exclusiva, não transferível
+e revogável para instalação e uso do software SGA - PDV em equipamentos
+de propriedade ou sob controle do usuário, exclusivamente para fins de
+operação de ponto de venda e gestão comercial.
+
+2. RESTRIÇÕES
+O usuário não poderá:
+a) Realizar engenharia reversa, descompilar ou desmontar o software;
+b) Redistribuir, sublicenciar, alugar ou ceder o software a terceiros;
+c) Remover ou alterar avisos de direitos autorais ou marcas registradas;
+d) Utilizar o software para fins ilícitos ou que violem a legislação vigente.
+
+3. DADOS DO USUÁRIO
+O sistema armazena informações comerciais e de clientes conforme as
+necessidades operacionais do estabelecimento. O usuário é o único
+responsável pelo cumprimento da Lei Geral de Proteção de Dados (LGPD)
+e demais legislações aplicáveis ao tratamento dessas informações.
+
+4. LIMITAÇÃO DE RESPONSABILIDADE
+O software é fornecido "no estado em que se encontra". A T-Mídia não se
+responsabiliza por perdas de dados, lucros cessantes ou quaisquer
+prejuízos decorrentes do uso ou impossibilidade de uso do software,
+salvo nos casos previstos em lei.
+
+5. ATUALIZAÇÕES E SUPORTE
+Eventuais atualizações, correções e suporte técnico serão disponibilizados
+a critério da T-Mídia, podendo depender da vigência de contrato específico.
+
+6. RESCISÃO
+O descumprimento de qualquer termo desta licença implica na rescisão
+automática do direito de uso, devendo o software ser desinstalado
+imediatamente.
+
+Ao clicar em "Eu aceito" o usuário declara ter lido, compreendido
+e concordado com todos os termos desta licença.

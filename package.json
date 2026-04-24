@@ -1,7 +1,13 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "sga-pdv",
+  "productName": "SGA - PDV",
+  "description": "Sistema de Gestão e Ponto de Venda para lojas de calçados",
+  "author": {
+    "name": "T-Mídia",
+    "email": "tmidiamkt@gmail.com"
+  },
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -12,7 +18,64 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:8080 && electron .\"",
     "desktop": "npm run electron:dev",
-    "build:desktop": "vite build && electron-builder"
+    "build:desktop": "vite build --mode electron && electron-builder --win --x64",
+    "build:installer": "vite build --mode electron && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.tmidia.sga",
+    "productName": "SGA - PDV",
+    "copyright": "Copyright © 2026 T-Mídia",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/*.map",
+      "!**/{.DS_Store,Thumbs.db}"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/rawprint.ps1",
+        "to": "rawprint.ps1"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "publisherName": "T-Mídia",
+      "verifyUpdateCodeSignature": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "SGA - PDV",
+      "menuCategory": "T-Mídia",
+      "uninstallDisplayName": "SGA - PDV Calçados ${version}",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "license": "build/LICENSE.txt",
+      "language": "1046",
+      "displayLanguageSelector": false,
+      "warningsAsErrors": false
+    },
+    "publish": null
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
