@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Lock, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
 
 interface NewPasswordFormProps {
   newPassword: string;
@@ -101,7 +101,7 @@ const NewPasswordForm = ({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle className="w-4 h-4" />
               <span>Atualizar Senha</span>
             </div>
           )}
