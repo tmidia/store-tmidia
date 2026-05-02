@@ -7,32 +7,25 @@ export const usePasswordReset = () => {
   const [isNewPasswordMode, setIsNewPasswordMode] = useState(false);
 
   useEffect(() => {
-    // Verificar se há tokens de recuperação na URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    const type = hashParams.get('type');
+    // Escutar eventos de auth para identificar recuperação de senha (Supabase v2)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsNewPasswordMode(true);
+      }
+    });
 
-    if (accessToken && refreshToken && type === 'recovery') {
-      // Configurar a sessão com os tokens de recuperação
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then(({ error }) => {
-        if (error) {
-          console.error('Erro ao definir sessão:', error);
-          toast({
-            title: "Erro na recuperação",
-            description: "Link de recuperação inválido ou expirado.",
-            variant: "destructive",
-          });
-        } else {
-          setIsNewPasswordMode(true);
-          // Limpar a URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      });
+    // Fallback: Verificar se há tokens de recuperação na URL ou query params
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const searchParams = new URLSearchParams(window.location.search);
+    const type = hashParams.get('type') || searchParams.get('type');
+
+    if (type === 'recovery') {
+      setIsNewPasswordMode(true);
     }
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handlePasswordReset = async (email: string) => {

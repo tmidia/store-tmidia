@@ -1,8 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { UserFormData } from '@/types/user';
 import { capitalizeWords } from '@/utils/userUtils';
 import { validateEmail, validatePassword, validateUsername, validateName, validateCPF, sanitizeInput } from '@/utils/inputValidation';
+import { createClient } from '@supabase/supabase-js';
 
 export const createUser = async (formData: UserFormData): Promise<void> => {
   // Validate and sanitize inputs
@@ -55,8 +55,24 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
   console.log('Iniciando criação de usuário:', { email: sanitizedEmail, username: sanitizedUsername });
 
-  // Usar signup normal do Supabase
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+  // Criar um cliente temporário para não deslogar o administrador atual
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Variáveis de ambiente do Supabase não encontradas');
+  }
+
+  const tempSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    }
+  });
+
+  // Usar o cliente temporário para criar o usuário
+  const { data: signUpData, error: signUpError } = await tempSupabase.auth.signUp({
     email: sanitizedEmail,
     password: sanitizedPassword,
     options: {
@@ -82,8 +98,9 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
   try {
     // Aguardar um pouco para o trigger criar o perfil automaticamente
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
+    // Usar o cliente principal (administrador) para as próximas operações
     // Verificar se o perfil foi criado automaticamente, se não, criar manualmente
     const { data: existingProfile } = await supabase
       .from('profiles')
@@ -160,7 +177,7 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
       if (permissionsError) {
         console.error('Erro ao criar permissões:', permissionsError);
-        // Não fazer rollback completo por conta das permissões
+        throw new Error('Erro ao salvar as permissões do usuário');
       } else {
         console.log('Permissões criadas com sucesso');
       }

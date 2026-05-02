@@ -51,7 +51,9 @@
         }
       ],
       "icon": "build/icon.ico",
-      "publisherName": "T-Mídia",
+      "signtoolOptions": {
+        "publisherName": "T-Mídia"
+      },
       "verifyUpdateCodeSignature": false,
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },

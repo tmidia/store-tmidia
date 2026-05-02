@@ -25,10 +25,10 @@ const Login = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    if (user && !isNewPasswordMode) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, isNewPasswordMode, navigate]);
 
   const {
     isNewPasswordMode,

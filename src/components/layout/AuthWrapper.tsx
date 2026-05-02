@@ -1,5 +1,4 @@
-
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 interface AuthWrapperProps {
@@ -8,6 +7,7 @@ interface AuthWrapperProps {
 
 export const AuthWrapper = ({ children }: AuthWrapperProps) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -17,5 +17,10 @@ export const AuthWrapper = ({ children }: AuthWrapperProps) => {
     );
   }
 
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  if (!user) {
+    // Preserva o hash (usado para tokens do Supabase) ao redirecionar
+    return <Navigate to={`/login${location.search}${location.hash}`} replace />;
+  }
+
+  return <>{children}</>;
 };
