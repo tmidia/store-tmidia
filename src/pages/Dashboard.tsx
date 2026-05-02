@@ -52,19 +52,21 @@ const Dashboard = () => {
         
         const [
           { count: productsCount },
-          { data: lowStockData },
+          { data: productsData },
           { count: categoriesCount },
           { count: suppliersCount }
         ] = await Promise.all([
           supabase.from('products').select('*', { count: 'exact', head: true }),
-          supabase.from('products').select('stock_quantity, minimum_stock').lte('stock_quantity', 'minimum_stock'),
+          supabase.from('products').select('stock_quantity, minimum_stock'),
           supabase.from('categories').select('*', { count: 'exact', head: true }),
           supabase.from('suppliers').select('*', { count: 'exact', head: true })
         ]);
 
+        const lowStockCount = productsData ? productsData.filter(p => p.stock_quantity <= p.minimum_stock).length : 0;
+
         const newStats = {
           totalProducts: productsCount || 0,
-          lowStockProducts: lowStockData?.length || 0,
+          lowStockProducts: lowStockCount,
           totalCategories: categoriesCount || 0,
           totalSuppliers: suppliersCount || 0
         };
