@@ -21,20 +21,20 @@ const Login = () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const navigate = useNavigate();
-  
-  const { user } = useAuth();
 
-  useEffect(() => {
-    if (user && !isNewPasswordMode) {
-      navigate('/dashboard');
-    }
-  }, [user, isNewPasswordMode, navigate]);
+  const { user } = useAuth();
 
   const {
     isNewPasswordMode,
     handlePasswordReset,
     handleNewPasswordSubmit
   } = usePasswordReset();
+
+  useEffect(() => {
+    if (user && !isNewPasswordMode) {
+      navigate('/dashboard');
+    }
+  }, [user, isNewPasswordMode, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
