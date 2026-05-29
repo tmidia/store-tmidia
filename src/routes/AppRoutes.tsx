@@ -1,25 +1,43 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
 import { AuthWrapper } from "@/components/layout/AuthWrapper";
 import { MainLayout } from "@/components/layout/MainLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Login from "@/pages/Login";
-import Dashboard from "@/pages/Dashboard";
-import Produtos from "@/pages/Produtos";
-import PDV from "@/pages/PDV";
-import NotFound from "@/pages/NotFound";
-import Estoque from "@/pages/Estoque";
-import Fornecedores from "@/pages/Fornecedores";
-import Categorias from "@/pages/Categorias";
-import Financeiro from "@/pages/Financeiro";
-import Despesas from "@/pages/Despesas";
-import Relatorios from "@/pages/Relatorios";
-import { ConfiguracoesPage } from "@/components/pages/ConfiguracoesPage";
-import { UsuariosPage } from "@/components/pages/UsuariosPage";
+
+// Páginas carregadas sob demanda (code-splitting) para reduzir o bundle inicial.
+const Login = lazy(() => import("@/pages/Login"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Produtos = lazy(() => import("@/pages/Produtos"));
+const PDV = lazy(() => import("@/pages/PDV"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Estoque = lazy(() => import("@/pages/Estoque"));
+const Fornecedores = lazy(() => import("@/pages/Fornecedores"));
+const Categorias = lazy(() => import("@/pages/Categorias"));
+const Financeiro = lazy(() => import("@/pages/Financeiro"));
+const Despesas = lazy(() => import("@/pages/Despesas"));
+const Relatorios = lazy(() => import("@/pages/Relatorios"));
+const ConfiguracoesPage = lazy(() =>
+  import("@/components/pages/ConfiguracoesPage").then((m) => ({ default: m.ConfiguracoesPage }))
+);
+const UsuariosPage = lazy(() =>
+  import("@/components/pages/UsuariosPage").then((m) => ({ default: m.UsuariosPage }))
+);
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div
+      className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"
+      role="status"
+      aria-label="Carregando"
+    />
+  </div>
+);
 
 export const AppRoutes = () => {
   return (
-    <Routes>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={
         <AuthWrapper>
@@ -126,6 +144,7 @@ export const AppRoutes = () => {
         </AuthWrapper>
       } />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 };

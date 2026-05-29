@@ -7,23 +7,26 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { RoleBasedAccessProvider } from "@/context/RoleBasedAccessContext";
 import { AppRoutes } from "@/routes/AppRoutes";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <RoleBasedAccessProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </RoleBasedAccessProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <RoleBasedAccessProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </RoleBasedAccessProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
