@@ -9,7 +9,7 @@ interface CashSession {
   closing_amount?: number;
   expected_amount?: number;
   difference?: number;
-  opened_at: string;
+  created_at: string;
   closed_at?: string;
   status: string;
 }
@@ -61,7 +61,7 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
             const sangriasDaSessao = sessionTransactions.filter(t => t.reference_id === session.id);
             const totalSangrias = sangriasDaSessao.reduce((sum, s) => sum + Number(s.amount), 0);
 
-            const totalVendas = (session.status === 'closed' && session.expected_amount != null && session.opening_amount != null)
+            const totalVendas = (session.status === 'fechada' && session.expected_amount != null && session.opening_amount != null)
               ? Number(session.expected_amount) - Number(session.opening_amount) + totalSangrias
               : 0;
 
@@ -73,11 +73,11 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
                       <p className="text-sm font-medium text-gray-500">Abertura</p>
                       <p className="text-lg font-semibold">{formatCurrency(Number(session.opening_amount))}</p>
                       <p className="text-xs text-gray-400">
-                        {safeDateTime(session.opened_at)}
+                        {safeDateTime(session.created_at)}
                       </p>
                     </div>
                     
-                    {session.status === 'closed' && (
+                    {session.status === 'fechada' && (
                       <>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Total Vendas</p>
@@ -116,7 +116,7 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
                       </>
                     )}
                     
-                    {session.status === 'open' && (
+                    {session.status === 'aberta' && (
                       <div className="lg:col-span-5 md:col-span-2 sm:col-span-1 flex items-center">
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full">
                           Caixa Aberto
