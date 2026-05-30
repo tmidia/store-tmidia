@@ -33,6 +33,13 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
     }).format(value);
   };
 
+  // Formata data com segurança: datas nulas/inválidas não derrubam a tela.
+  const safeDateTime = (value?: string | null) => {
+    if (!value) return '';
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? '' : format(d, 'dd/MM/yyyy HH:mm', { locale: ptBR });
+  };
+
   if (!cashSessions || cashSessions.length === 0) {
     return null;
   }
@@ -66,7 +73,7 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
                       <p className="text-sm font-medium text-gray-500">Abertura</p>
                       <p className="text-lg font-semibold">{formatCurrency(Number(session.opening_amount))}</p>
                       <p className="text-xs text-gray-400">
-                        {format(new Date(session.opened_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        {safeDateTime(session.opened_at)}
                       </p>
                     </div>
                     
@@ -87,7 +94,7 @@ export const CashSessionsCard = ({ cashSessions, sessionTransactions }: CashSess
                           <p className="text-sm font-medium text-gray-500">Fechamento</p>
                           <p className="text-lg font-semibold">{formatCurrency(Number(session.closing_amount))}</p>
                           <p className="text-xs text-gray-400">
-                            {session.closed_at && format(new Date(session.closed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            {safeDateTime(session.closed_at)}
                           </p>
                         </div>
                         
