@@ -89,15 +89,18 @@ export const CashFlow = () => {
     }).format(value);
   };
 
+  const isIncome = (type: string) =>
+    ['venda', 'receita_avulsa', 'suprimento', 'recebimento'].includes(type);
+
   const getTypeIcon = (type: string) => {
-    if (['entrada', 'venda', 'recebimento'].includes(type)) {
+    if (isIncome(type)) {
       return <ArrowUpCircle className="w-4 h-4 text-green-600" />;
     }
     return <ArrowDownCircle className="w-4 h-4 text-red-600" />;
   };
 
   const getTypeColor = (type: string) => {
-    if (['entrada', 'venda', 'recebimento'].includes(type)) {
+    if (isIncome(type)) {
       return 'bg-green-100 text-green-800';
     }
     return 'bg-red-100 text-red-800';
@@ -105,15 +108,12 @@ export const CashFlow = () => {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      'entrada': 'Entrada',
-      'saida': 'Saída',
-      'abertura_caixa': 'Abertura Caixa',
-      'fechamento_caixa': 'Fechamento Caixa',
-      'sangria': 'Sangria',
-      'suprimento': 'Suprimento',
       'venda': 'Venda',
-      'recebimento': 'Recebimento',
-      'pagamento': 'Pagamento'
+      'receita_avulsa': 'Receita Avulsa',
+      'despesa': 'Despesa',
+      'suprimento': 'Suprimento',
+      'sangria': 'Sangria',
+      'estorno': 'Estorno'
     };
     return labels[type] || type;
   };
@@ -145,12 +145,11 @@ export const CashFlow = () => {
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="entrada">Entrada</SelectItem>
-                    <SelectItem value="saida">Saída</SelectItem>
-                    <SelectItem value="suprimento">Suprimento</SelectItem>
-                    <SelectItem value="sangria">Sangria</SelectItem>
-                    <SelectItem value="recebimento">Recebimento</SelectItem>
-                    <SelectItem value="pagamento">Pagamento</SelectItem>
+                    <SelectItem value="receita_avulsa">Entrada (Receita Avulsa)</SelectItem>
+                    <SelectItem value="despesa">Saída (Despesa)</SelectItem>
+                    <SelectItem value="suprimento">Suprimento (entrada de caixa)</SelectItem>
+                    <SelectItem value="sangria">Sangria (retirada de caixa)</SelectItem>
+                    <SelectItem value="estorno">Estorno</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
