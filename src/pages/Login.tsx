@@ -8,6 +8,10 @@ import PasswordResetForm from '@/components/auth/PasswordResetForm';
 import NewPasswordForm from '@/components/auth/NewPasswordForm';
 import { usePasswordReset } from '@/hooks/usePasswordReset';
 import { useAuth } from '@/hooks/useAuth';
+import { isElectron } from '@/lib/platform';
+
+// No app desktop (modo caixa) abre direto no PDV; na web vai para o Dashboard.
+const HOME_ROUTE = isElectron() ? '/pdv' : '/dashboard';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -32,7 +36,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user && !isNewPasswordMode) {
-      navigate('/dashboard');
+      navigate(HOME_ROUTE);
     }
   }, [user, isNewPasswordMode, navigate]);
 
@@ -78,7 +82,7 @@ const Login = () => {
           description: profile?.full_name ? `Olá, ${profile.full_name}. Login realizado com sucesso.` : 'Login realizado com sucesso.',
         });
         
-        navigate('/dashboard');
+        navigate(HOME_ROUTE);
       }
     } catch (error: any) {
       toast({
