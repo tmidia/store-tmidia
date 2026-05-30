@@ -111,7 +111,6 @@ export const AccountsReceivable = () => {
           amount: amount,
           description: `Recebimento de ${account.customer_name}`,
           reference_id: accountId,
-          reference_type: 'accounts_receivable',
           user_id: (await supabase.auth.getUser()).data.user?.id
         }]);
     },

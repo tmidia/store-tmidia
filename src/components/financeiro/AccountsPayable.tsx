@@ -144,8 +144,6 @@ export const AccountsPayable = () => {
           amount: amount,
           description: `Pagamento para ${account.supplier_name}`,
           reference_id: accountId,
-          reference_type: 'accounts_payable',
-          category_id: account.category_id,
           user_id: (await supabase.auth.getUser()).data.user?.id
         }]);
     },
