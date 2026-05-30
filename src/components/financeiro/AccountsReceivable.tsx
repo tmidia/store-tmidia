@@ -55,7 +55,6 @@ export const AccountsReceivable = () => {
           customer_document: data.customer_document || null,
           customer_phone: data.customer_phone || null,
           amount: amount,
-          remaining_amount: amount,
           due_date: data.due_date,
           description: data.description || null
         }]);
@@ -96,7 +95,6 @@ export const AccountsReceivable = () => {
         .from('accounts_receivable')
         .update({
           paid_amount: newPaidAmount,
-          remaining_amount: newRemainingAmount,
           status: newStatus
         })
         .eq('id', accountId);

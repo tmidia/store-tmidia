@@ -129,7 +129,6 @@ export const AccountsPayable = () => {
         .from('accounts_payable')
         .update({
           paid_amount: newPaidAmount,
-          remaining_amount: newRemainingAmount,
           status: newStatus
         })
         .eq('id', accountId);
