@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { formatCpfCnpj, formatPhone } from '@/utils/textUtils';
 
 export const AccountsReceivable = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -211,7 +212,7 @@ export const AccountsReceivable = () => {
                   id="customer_document"
                   placeholder="000.000.000-00"
                   value={formData.customer_document}
-                  onChange={(e) => setFormData({...formData, customer_document: e.target.value})}
+                  onChange={(e) => setFormData({...formData, customer_document: formatCpfCnpj(e.target.value)})}
                 />
               </div>
 
@@ -221,7 +222,7 @@ export const AccountsReceivable = () => {
                   id="customer_phone"
                   placeholder="(00) 00000-0000"
                   value={formData.customer_phone}
-                  onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
+                  onChange={(e) => setFormData({...formData, customer_phone: formatPhone(e.target.value)})}
                 />
               </div>
 
