@@ -1,9 +1,61 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { buildReceipt } = require('./escpos.cjs');
 const { printRaw } = require('./rawprint.cjs');
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+// Pasta com o build do front (funciona dentro do app.asar — fs do Electron lê asar).
+const DIST = path.join(__dirname, '..', 'dist');
+
+// ============================================================
+// Protocolo customizado "app://" para servir o build em produção.
+// Carregar via file:// não funciona: o Chromium bloqueia os
+// <script type="module"> do Vite por CORS (origem "null"), deixando
+// a tela em branco. Um esquema próprio resolve com origem estável.
+// ============================================================
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+]);
+
+const MIME = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.map': 'application/json',
+};
+
+function registerAppProtocol() {
+  protocol.handle('app', (request) => {
+    const { pathname } = new URL(request.url);
+    const rel = decodeURIComponent(pathname);
+    const filePath = path.join(DIST, rel === '/' ? 'index.html' : rel);
+
+    try {
+      const data = fs.readFileSync(filePath);
+      const mime = MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
+      return new Response(data, { headers: { 'content-type': mime } });
+    } catch (err) {
+      console.error('[app://] arquivo não encontrado:', filePath, err.message);
+      return new Response('Not found', { status: 404 });
+    }
+  });
+}
 
 let mainWindow;
 
@@ -23,14 +75,20 @@ function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
+  // Loga falhas de carregamento (ajuda a diagnosticar tela branca).
+  mainWindow.webContents.on('did-fail-load', (_e, code, desc, url) => {
+    console.error(`[did-fail-load] ${code} ${desc} -> ${url}`);
+  });
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:8080');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    mainWindow.loadURL('app://bundle/index.html');
   }
 }
 
 app.whenReady().then(() => {
+  registerAppProtocol();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
