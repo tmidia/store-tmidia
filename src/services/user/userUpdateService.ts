@@ -116,20 +116,16 @@ export const updateUser = async (user: UserWithPermissions, formData: UserFormDa
     console.log('✅ Senha atualizada com sucesso!');
   }
 
-  // Atualizar role na tabela user_roles
+  // Sincronizar o papel em user_roles: remove o(s) existente(s) e regrava o
+  // escolhido. Evita o caso em que o update não encontrava linha (deixando o
+  // usuário sem papel) e impede papéis duplicados.
+  await supabase.from('user_roles').delete().eq('user_id', user.id);
   const { error: roleError } = await supabase
     .from('user_roles')
-    .update({ role: formData.user_type as any })
-    .eq('user_id', user.id);
+    .insert({ user_id: user.id, role: formData.user_type as any });
 
   if (roleError) {
-    console.error('Erro ao atualizar role:', roleError);
-    // Tentar upsert caso não exista
-    await supabase
-      .from('user_roles')
-      .upsert({ user_id: user.id, role: formData.user_type as any });
-  } else {
-    console.log('Role atualizada com sucesso para:', formData.user_type);
+    console.error('Erro ao definir role:', roleError);
   }
 
   // Remover permissões existentes

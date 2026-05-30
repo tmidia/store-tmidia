@@ -57,8 +57,8 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
   // Criar um cliente temporário para não deslogar o administrador atual
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Variáveis de ambiente do Supabase não encontradas');
   }
@@ -146,23 +146,20 @@ export const createUser = async (formData: UserFormData): Promise<void> => {
 
     console.log('Perfil criado/atualizado com sucesso');
 
-    // Atualizar o papel (role) do usuário na tabela user_roles
-    if (formData.user_type && formData.user_type !== 'vendedor') {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: formData.user_type as any })
-        .eq('user_id', signUpData.user.id);
+    // Garantir que o papel em user_roles reflita exatamente o escolhido.
+    // O trigger handle_new_user cria 'vendedor' por padrão; removemos e
+    // regravamos para não depender de update (que falharia se a linha
+    // ainda não existisse) e para evitar papéis duplicados.
+    await supabase.from('user_roles').delete().eq('user_id', signUpData.user.id);
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({ user_id: signUpData.user.id, role: formData.user_type as any });
 
-      if (roleError) {
-        console.error('Erro ao atualizar role:', roleError);
-        // Tentar upsert caso não exista
-        await supabase
-          .from('user_roles')
-          .upsert({ user_id: signUpData.user.id, role: formData.user_type as any });
-      } else {
-        console.log('Role atualizada com sucesso para:', formData.user_type);
-      }
+    if (roleError) {
+      console.error('Erro ao definir role:', roleError);
+      throw new Error('Erro ao definir o papel (role) do usuário');
     }
+    console.log('Role definida com sucesso para:', formData.user_type);
 
     // Criar permissões se especificadas
     if (formData.permissions && formData.permissions.length > 0) {
