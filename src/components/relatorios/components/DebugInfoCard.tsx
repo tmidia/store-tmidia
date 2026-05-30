@@ -10,13 +10,11 @@ interface Transaction {
 }
 
 interface DebugInfo {
-  periodo: {
+  period?: {
     startDate: string;
     endDate: string;
   };
-  vendasType: number;
-  vendasDesc: number;
-  allInPeriod: number;
+  count?: number;
 }
 
 interface DebugInfoCardProps {
@@ -43,13 +41,11 @@ export const DebugInfoCard = ({ allTransactions, cashSessions, debugInfo }: Debu
           <p><strong>Total de transações no sistema:</strong> {allTransactions?.length || 0}</p>
           <p><strong>Vendas no sistema:</strong> {allTransactions?.filter(t => t.type === 'venda').length || 0}</p>
           <p><strong>Sessões de caixa no período:</strong> {cashSessions?.length || 0}</p>
-          {debugInfo && (
-            <>
-              <p><strong>Período consultado:</strong> {debugInfo.periodo.startDate} até {debugInfo.periodo.endDate}</p>
-              <p><strong>Vendas por tipo "venda":</strong> {debugInfo.vendasType}</p>
-              <p><strong>Vendas por descrição:</strong> {debugInfo.vendasDesc}</p>
-              <p><strong>Todas transações no período:</strong> {debugInfo.allInPeriod}</p>
-            </>
+          {debugInfo?.period && (
+            <p><strong>Período consultado:</strong> {debugInfo.period.startDate} até {debugInfo.period.endDate}</p>
+          )}
+          {typeof debugInfo?.count === 'number' && (
+            <p><strong>Vendas encontradas no período:</strong> {debugInfo.count}</p>
           )}
           
           {allTransactions && allTransactions.length > 0 && (
