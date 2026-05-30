@@ -114,20 +114,28 @@ ipcMain.handle('print-receipt-raw', async (event, payload) => {
     // Localiza a impressora térmica
     const webContents = event.sender;
     const printers = await webContents.getPrintersAsync();
-    console.log('Impressoras disponíveis:', printers.map(p => p.name).join(', '));
+    const nomes = printers.map(p => p.name);
+    console.log('Impressoras disponíveis:', nomes.join(', '));
 
-    const target = printers.find(p =>
-      /pos[\s-]?80|smx|xprinter|thermal|t80|epson tm|bematech|elgin/i.test(p.name)
-    ) || printers.find(p => p.isDefault);
+    // Impressoras virtuais que nunca devem receber o cupom.
+    const VIRTUAL = /microsoft print to pdf|microsoft xps|onenote|fax|pdf|xps/i;
+    // Nomes/drivers comuns de impressora térmica de cupom.
+    const THERMAL = /pos[\s-]?80|smx|xprinter|thermal|t80|epson tm|bematech|elgin|generic.*text|caixa|cupom|talao/i;
+
+    const target =
+      printers.find(p => THERMAL.test(p.name)) ||                        // 1) nome típico de térmica
+      printers.find(p => p.isDefault && !VIRTUAL.test(p.name)) ||        // 2) padrão, se não for virtual
+      printers.find(p => !VIRTUAL.test(p.name)) ||                       // 3) qualquer impressora real
+      printers.find(p => p.isDefault);                                   // 4) último recurso
 
     if (!target) {
-      throw new Error('Nenhuma impressora disponível no Windows');
+      throw new Error('Nenhuma impressora encontrada. Detectadas: ' + (nomes.join(', ') || 'nenhuma'));
     }
 
     console.log(`[RAW] Enviando ${escposBytes.length} bytes ESC/POS para "${target.name}"`);
     const result = await printRaw(target.name, escposBytes);
     console.log('[RAW] Sucesso:', result.stdout.trim());
-    return { success: true, printer: target.name };
+    return { success: true, printer: target.name, printers: nomes };
   } catch (err) {
     console.error('[RAW] ERRO:', err.message);
     return { success: false, error: err.message };
