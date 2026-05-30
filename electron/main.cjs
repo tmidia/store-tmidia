@@ -4,7 +4,9 @@ const fs = require('fs');
 const { buildReceipt } = require('./escpos.cjs');
 const { printRaw } = require('./rawprint.cjs');
 
-const isDev = process.env.NODE_ENV !== 'production';
+// app.isPackaged é a forma confiável de distinguir dev vs. app instalado.
+// (NODE_ENV não é definido pelo electron-builder, então não serve aqui.)
+const isDev = !app.isPackaged;
 
 // Pasta com o build do front (funciona dentro do app.asar — fs do Electron lê asar).
 const DIST = path.join(__dirname, '..', 'dist');
