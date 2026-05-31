@@ -9,6 +9,8 @@ import { RoleBasedAccessProvider } from "@/context/RoleBasedAccessContext";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { isElectron } from "@/lib/platform";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
+import SetupWizard from "@/pages/SetupWizard";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +18,17 @@ const queryClient = new QueryClient();
 // não funciona. O HashRouter usa o fragmento (#/rota) e funciona em ambos.
 const Router = isElectron() ? HashRouter : BrowserRouter;
 
-const App = () => (
+const App = () => {
+  // Sem credenciais do Supabase (build-time ou salvas) → tela de configuração.
+  if (!isSupabaseConfigured) {
+    return (
+      <ErrorBoundary>
+        <SetupWizard />
+      </ErrorBoundary>
+    );
+  }
+
+  return (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -32,6 +44,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;

@@ -1,27 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { getSupabaseConfig } from '@/lib/runtimeConfig';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const config = getSupabaseConfig();
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const msg =
-    'Variáveis de ambiente do Supabase não configuradas. ' +
-    'Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no provedor de hospedagem.';
-  if (typeof document !== 'undefined') {
-    document.body.innerHTML =
-      `<div style="font-family:system-ui;padding:2rem;max-width:640px;margin:3rem auto;` +
-      `border:1px solid #fca5a5;background:#fef2f2;border-radius:8px;color:#991b1b">` +
-      `<h2 style="margin:0 0 .5rem">Configuração pendente</h2>` +
-      `<p style="margin:0">${msg}</p></div>`;
+// Indica se há credenciais (build-time ou salvas pelo assistente).
+// Quando false, o App renderiza a tela de configuração em vez do sistema.
+export const isSupabaseConfigured = config !== null;
+
+// Quando não há config, criamos um client com valores placeholder apenas para
+// não quebrar os imports. Ele nunca é usado, pois o App mostra o SetupWizard.
+export const supabase = createClient<Database>(
+  config?.url ?? 'https://placeholder.supabase.co',
+  config?.anonKey ?? 'placeholder',
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   }
-  throw new Error(msg);
-}
-
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+);
