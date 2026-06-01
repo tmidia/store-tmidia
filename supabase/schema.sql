@@ -1554,3 +1554,43 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+
+
+-- === ANCORA DE LICENCA (uma licenca por loja, compartilhada entre navegadores) ===
+-- ============================================================================
+-- Ã‚NCORA DE LICENÃ‡A (roda no banco de CADA LOJA, nÃ£o no central)
+-- Cria um ID de licenÃ§a ESTÃVEL por loja, guardado no banco da prÃ³pria loja.
+-- Assim todos os navegadores/dispositivos da loja usam a MESMA licenÃ§a
+-- (nÃ£o duplica mais). JÃ¡ vai incluÃ­do no schema mestre das lojas novas;
+-- para lojas que jÃ¡ existem, rode este script uma vez no SQL Editor.
+-- ============================================================================
+
+-- Tabela de uma linha sÃ³, guardando o id da licenÃ§a da loja.
+CREATE TABLE IF NOT EXISTS public.app_license (
+  singleton   boolean PRIMARY KEY DEFAULT true,
+  license_id  uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT app_license_singleton CHECK (singleton)
+);
+
+ALTER TABLE public.app_license ENABLE ROW LEVEL SECURITY;
+-- Sem polÃ­ticas: ninguÃ©m acessa a tabela direto. SÃ³ a funÃ§Ã£o abaixo (definer).
+
+-- Retorna o id da licenÃ§a da loja, criando-o na primeira vez (idempotente).
+-- Pode ser chamada pelo app antes do login (anon).
+CREATE OR REPLACE FUNCTION public.get_or_create_license_id()
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE v uuid;
+BEGIN
+  INSERT INTO public.app_license (singleton) VALUES (true)
+  ON CONFLICT (singleton) DO NOTHING;
+  SELECT license_id INTO v FROM public.app_license WHERE singleton = true;
+  RETURN v;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_or_create_license_id() TO anon, authenticated;

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { supabase as storeClient } from '@/integrations/supabase/client';
 
 // ============================================================================
 // Conexão com o BANCO CENTRAL de licenças (separado do banco da loja).
@@ -28,14 +29,34 @@ export type LicenseState =
   | { state: 'warning'; days: number; kind: 'trial' | 'active' }
   | { state: 'blocked'; reason: 'blocked' | 'trial_expired' | 'expired' };
 
-async function registerTrial(): Promise<string> {
-  const { data, error } = await central.rpc('register_trial', {
-    p_store_name: typeof window !== 'undefined' ? window.location.hostname : '',
-    p_owner_email: null,
+function uuidv4(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
-  if (error) throw error;
-  const id = data as string;
-  localStorage.setItem(LICENSE_KEY, id);
+}
+
+/**
+ * ID estável da licença da loja. Preferimos o banco da PRÓPRIA loja
+ * (compartilhado entre todos os navegadores/dispositivos), com fallback para
+ * o localStorage caso a loja ainda não tenha a função get_or_create_license_id.
+ */
+async function getStableId(): Promise<string> {
+  try {
+    const { data, error } = await storeClient.rpc('get_or_create_license_id');
+    if (!error && data) {
+      localStorage.setItem(LICENSE_KEY, data as string);
+      return data as string;
+    }
+  } catch {
+    /* loja sem o RPC ainda → usa fallback abaixo */
+  }
+  let id = localStorage.getItem(LICENSE_KEY);
+  if (!id) {
+    id = uuidv4();
+    localStorage.setItem(LICENSE_KEY, id);
+  }
   return id;
 }
 
@@ -48,15 +69,13 @@ async function fetchLicense(id: string): Promise<License | null> {
 
 /** Garante uma licença (cria trial na 1ª vez) e retorna o status atual. */
 export async function resolveLicense(): Promise<{ id: string; license: License | null }> {
-  let id = localStorage.getItem(LICENSE_KEY);
-  if (!id) id = await registerTrial();
-
-  let license = await fetchLicense(id);
-  // Se o id sumiu do banco (apagado), registra um novo trial.
-  if (!license) {
-    id = await registerTrial();
-    license = await fetchLicense(id);
-  }
+  const id = await getStableId();
+  // Registra o trial para esse id (idempotente: não duplica se já existir).
+  await central.rpc('register_trial', {
+    p_id: id,
+    p_store_name: typeof window !== 'undefined' ? window.location.hostname : '',
+  });
+  const license = await fetchLicense(id);
   return { id, license };
 }
 

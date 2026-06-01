@@ -28,22 +28,23 @@ CREATE POLICY "admin full access licenses" ON public.licenses
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ----------------------------------------------------------------------------
--- Função: registrar um TRIAL de 7 dias (chamada pela loja ao instalar).
--- Retorna a license_id que a loja vai guardar.
+-- Função: registrar um TRIAL de 7 dias para um ID fornecido pela loja.
+-- A loja gera um ID estável (guardado no banco dela) e passa aqui; assim
+-- todos os navegadores/dispositivos da mesma loja usam UMA única licença.
+-- Idempotente: se o ID já existe, não cria de novo.
 -- ----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.register_trial(p_store_name text, p_owner_email text)
-RETURNS uuid
+DROP FUNCTION IF EXISTS public.register_trial(text, text);
+CREATE OR REPLACE FUNCTION public.register_trial(p_id uuid, p_store_name text DEFAULT 'Nova Loja')
+RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE new_id uuid;
 BEGIN
-  INSERT INTO public.licenses (store_name, owner_email, status, trial_ends_at)
-  VALUES (COALESCE(NULLIF(p_store_name,''),'Nova Loja'), p_owner_email,
+  INSERT INTO public.licenses (id, store_name, status, trial_ends_at)
+  VALUES (p_id, COALESCE(NULLIF(p_store_name,''),'Nova Loja'),
           'trial', now() + interval '7 days')
-  RETURNING id INTO new_id;
-  RETURN new_id;
+  ON CONFLICT (id) DO NOTHING;
 END;
 $$;
 
@@ -63,8 +64,8 @@ AS $$
 $$;
 
 -- Permissões: lojas (anon) podem chamar só as funções.
-GRANT EXECUTE ON FUNCTION public.register_trial(text, text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_license(uuid)         TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.register_trial(uuid, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_license(uuid)          TO anon, authenticated;
 
 -- Mantém updated_at em dia
 CREATE OR REPLACE FUNCTION public.touch_updated_at()
