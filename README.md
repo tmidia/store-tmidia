@@ -3,10 +3,26 @@
 > Sistema completo de gestão para lojas: ponto de venda (PDV) com impressão de cupom,
 > controle de estoque, financeiro, relatórios e equipe — tudo no navegador ou instalado no caixa.
 
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-Desktop-47848F?logo=electron&logoColor=white)
+![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)
+
+<!--
+  📸 Telas do sistema:
+  Salve um print real (ex.: o Dashboard ou o PDV) em docs/dashboard.png
+  e descomente a linha abaixo para ele aparecer aqui no topo:
+
+  ![SGA - Dashboard](docs/dashboard.png)
+-->
+
 ---
 
 ## Índice
 - [Sobre](#sobre)
+- [Telas](#telas)
 - [Por que escolher o SGA?](#por-que-escolher-o-sga)
 - [O que você pode fazer](#o-que-você-pode-fazer)
 - [Instalação Rápida](#instalação-rápida)
@@ -22,6 +38,10 @@ O **SGA** é um sistema de gestão e ponto de venda para lojas (calçados, acess
 Cada loja roda no **seu próprio banco de dados** (Supabase), com os dados totalmente isolados.
 Você pode usá-lo direto no **navegador** ou instalar o **aplicativo de caixa** no Windows,
 com impressão de cupom na impressora térmica.
+
+## Telas
+> Para exibir prints reais aqui: salve as imagens na pasta [`docs/`](docs/) (ex.: `docs/dashboard.png`,
+> `docs/pdv.png`) e referencie com `![Dashboard](docs/dashboard.png)`. Veja [docs/README.md](docs/README.md).
 
 ## Por que escolher o SGA?
 - **Instalação em minutos:** deploy na Vercel + assistente que configura tudo sozinho.
