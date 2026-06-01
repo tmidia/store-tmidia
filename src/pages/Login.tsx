@@ -131,22 +131,17 @@ const Login = () => {
   return (
     <div className="min-h-screen flex font-inter bg-slate-50 dark:bg-slate-950">
       {/* Lado Esquerdo - Banner com Imagem */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 overflow-hidden">
-        {/* Imagem de Fundo Premium - Unsplash Fashion/Shoes */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 hover:scale-105"
-          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop)' }}
-        />
-        
-        {/* Overlay Gradiente */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent" />
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 overflow-hidden">
+        {/* Fundo neutro (gradiente + brilhos) — serve para qualquer tipo de loja */}
+        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-15%] left-[-10%] w-[55%] h-[55%] bg-sky-500/10 rounded-full blur-3xl" />
         
         <div className="relative z-10 flex flex-col justify-between p-12 h-full text-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
               <ShoppingBag className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-semibold tracking-tight shadow-sm">SGA Calçados</span>
+            <span className="text-xl font-semibold tracking-tight shadow-sm">SGA</span>
           </div>
 
           <div className="space-y-6 max-w-lg mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -185,7 +180,7 @@ const Login = () => {
               <ShoppingBag className="w-7 h-7 text-white" />
             </div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">SGA Calçados</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">SGA</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">Sistema de Gestão Avançado</p>
             </div>
           </div>
