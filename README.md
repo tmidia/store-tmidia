@@ -35,11 +35,11 @@ com impressão de cupom na impressora térmica.
 
 ## Telas
 
-| Produtos | Estoque |
+| Login | Produtos |
 |---|---|
-| ![Produtos](docs/produtos.png) | ![Estoque](docs/estoque.png) |
-| **Configurações** | **Dashboard** |
-| ![Configurações](docs/configuracoes.png) | ![Dashboard](docs/dashboard.png) |
+| ![Login](docs/Tela-Login.png) | ![Produtos](docs/Produtos.png) |
+| **Estoque** | **Financeiro** |
+| ![Estoque](docs/Estoque.png) | ![Financeiro](docs/Financeiro.png) |
 
 ## Por que escolher o SGA?
 - **Instalação em minutos:** deploy na Vercel + assistente que configura tudo sozinho.
