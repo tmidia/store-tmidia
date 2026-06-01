@@ -154,9 +154,14 @@ const Login = () => {
             
             <div className="flex items-center gap-4 pt-4">
               <div className="flex -space-x-3">
-                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-200" />
-                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-400" />
-                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-600" />
+                <img src="https://i.pravatar.cc/80?img=12" alt="" loading="lazy"
+                  className="w-10 h-10 rounded-full border-2 border-slate-900 object-cover bg-slate-700" />
+                <img src="https://i.pravatar.cc/80?img=32" alt="" loading="lazy"
+                  className="w-10 h-10 rounded-full border-2 border-slate-900 object-cover bg-slate-700" />
+                <img src="https://i.pravatar.cc/80?img=45" alt="" loading="lazy"
+                  className="w-10 h-10 rounded-full border-2 border-slate-900 object-cover bg-slate-700" />
+                <img src="https://i.pravatar.cc/80?img=5" alt="" loading="lazy"
+                  className="w-10 h-10 rounded-full border-2 border-slate-900 object-cover bg-slate-700" />
                 <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center text-xs font-bold text-slate-900">
                   +2k
                 </div>
