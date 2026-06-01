@@ -1,73 +1,128 @@
-# Welcome to your Lovable project
+# SGA — Sistema de Gestão e PDV
 
-## Project info
+> Sistema completo de gestão para lojas: ponto de venda (PDV) com impressão de cupom,
+> controle de estoque, financeiro, relatórios e equipe — tudo no navegador ou instalado no caixa.
 
-**URL**: https://lovable.dev/projects/765b82ba-fb7c-4fd7-a02b-b8c7ac456888
+---
 
-## How can I edit this code?
+## Índice
+- [Sobre](#sobre)
+- [Por que escolher o SGA?](#por-que-escolher-o-sga)
+- [O que você pode fazer](#o-que-você-pode-fazer)
+- [Instalação Rápida](#instalação-rápida)
+- [Primeiros Passos](#primeiros-passos)
+- [App Desktop (Caixa)](#app-desktop-caixa)
+- [Tecnologias](#tecnologias)
+- [Suporte](#suporte)
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Sobre
+O **SGA** é um sistema de gestão e ponto de venda para lojas (calçados, acessórios, variedades).
+Cada loja roda no **seu próprio banco de dados** (Supabase), com os dados totalmente isolados.
+Você pode usá-lo direto no **navegador** ou instalar o **aplicativo de caixa** no Windows,
+com impressão de cupom na impressora térmica.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/765b82ba-fb7c-4fd7-a02b-b8c7ac456888) and start prompting.
+## Por que escolher o SGA?
+- **Instalação em minutos:** deploy na Vercel + assistente que configura tudo sozinho.
+- **PDV completo:** venda rápida, formas de pagamento, cupom impresso (ESC/POS).
+- **Gestão de verdade:** produtos, estoque, fornecedores, financeiro e relatórios.
+- **Controle de equipe:** papéis (superadmin, gerente, vendedor, caixa) com permissões.
+- **Dados isolados:** cada loja tem o próprio banco — nenhuma loja vê dados de outra.
+- **App de caixa:** versão instalável (Windows) com impressão térmica integrada.
 
-Changes made via Lovable will be committed automatically to this repo.
+## O que você pode fazer
 
-**Use your preferred IDE**
+**Ponto de Venda (PDV)**
+- Vender por código de barras ou busca por nome
+- Formas de pagamento e troco
+- Abertura/fechamento de caixa e sangria
+- Impressão de cupom não-fiscal (impressora térmica ESC/POS)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+**Produtos e Estoque**
+- Cadastro de produtos, categorias e variações
+- Controle de estoque e alerta de estoque baixo
+- Fornecedores
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+**Financeiro**
+- Contas a pagar e a receber
+- Fluxo de caixa e transações
+- Despesas e categorias financeiras
 
-Follow these steps:
+**Relatórios**
+- Vendas por período
+- Financeiro
+- Estoque
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**Equipe**
+- Usuários com papéis e permissões por módulo
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Instalação Rápida
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Você cria um projeto Supabase (grátis), publica na Vercel e o **assistente configura o banco
+sozinho**. Sem precisar rodar comando nenhum.
+
+### 1. Crie o banco da loja
+- Acesse [supabase.com](https://supabase.com) → **New project** (guarde a senha do banco).
+
+### 2. Publique na Vercel
+Faça **fork** / **Use this template** deste repositório e conecte na Vercel, ou clique:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tmidia/store-tmidia)
+
+> Pode publicar **sem configurar variáveis** — o assistente faz isso pelo navegador.
+
+### 3. Abra o link e configure
+Ao abrir a URL pela primeira vez, aparece a **tela de configuração**. Informe:
+- **URL** e **chave anon** do projeto → `Settings → API`
+- **Token de acesso** → [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
+- **E-mail e senha** do administrador
+
+Clique em **Configurar e entrar**. O sistema cria todas as tabelas, o usuário admin e já entra
+funcionando. 🎉
+
+> Em outros computadores da mesma loja, use o link **"Já tenho o banco — só conectar"** no
+> assistente (informa só a URL + chave anon).
+
+---
+
+## Primeiros Passos
+1. Faça login com o administrador criado no assistente.
+2. Cadastre **categorias**, **fornecedores** e **produtos**.
+3. Crie os **usuários** da equipe (Usuários) com os papéis adequados.
+4. Abra o **PDV**, faça uma venda de teste e confira a impressão do cupom.
+
+---
+
+## App Desktop (Caixa)
+Para o caixa com impressora térmica, gere o instalador Windows:
+
+```bash
+npm install
+npm run setup            # configura o .env da loja
+npm run build:installer  # gera release/SGA - PDV-Setup-1.0.0.exe
 ```
 
-**Edit a file directly in GitHub**
+Envie o `.exe` ao cliente. Por ser um app não assinado, ao abrir aparece o aviso do SmartScreen
+→ **Mais informações → Executar assim mesmo**.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+> Veja o passo-a-passo completo em [SETUP.md](SETUP.md).
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Tecnologias
+- **Vite** + **React** + **TypeScript**
+- **Tailwind CSS** + **shadcn/ui**
+- **Supabase** (banco, autenticação, RLS)
+- **Electron** (app desktop + impressão ESC/POS)
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## Suporte
+Dúvidas ou problemas na instalação? Entre em contato com a **T-Mídia**.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/765b82ba-fb7c-4fd7-a02b-b8c7ac456888) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+<sub>© T-Mídia — SGA PDV</sub>
