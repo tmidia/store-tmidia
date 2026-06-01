@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { isElectron } from "@/lib/platform";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import SetupWizard from "@/pages/SetupWizard";
+import { LicenseGate } from "@/components/LicenseGate";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => {
 
   return (
   <ErrorBoundary>
+    <LicenseGate>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -43,6 +45,7 @@ const App = () => {
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
+    </LicenseGate>
   </ErrorBoundary>
   );
 };
