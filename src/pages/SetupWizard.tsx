@@ -35,6 +35,9 @@ const SetupWizard = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // 'full' = cria o banco e o admin (1ª instalação).
+  // 'connect' = só conecta a um banco já configurado (outros computadores).
+  const [mode, setMode] = useState<'full' | 'connect'>('full');
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -51,6 +54,22 @@ const SetupWizard = () => {
       const projectRef = extractProjectRef(url);
       if (!projectRef) throw new Error('URL do Supabase inválida (use https://xxxx.supabase.co).');
       if (!form.anonKey.trim()) throw new Error('Informe a chave anon.');
+
+      // Modo "só conectar": valida que o banco já existe e salva a config.
+      if (mode === 'connect') {
+        addLog('Verificando conexão...');
+        const testClient = createClient(url, form.anonKey.trim(), { auth: { persistSession: false } });
+        const { error: testError } = await testClient.from('profiles').select('id').limit(1);
+        if (testError && /does not exist|find the table|schema cache/i.test(testError.message)) {
+          throw new Error('Esse banco ainda não foi configurado. Use a configuração completa primeiro.');
+        }
+        saveSupabaseConfig({ url, anonKey: form.anonKey.trim() });
+        addLog('✓ Conectado.');
+        setDone(true);
+        setTimeout(() => window.location.reload(), 1200);
+        return;
+      }
+
       if (!form.accessToken.trim()) throw new Error('Informe o token de acesso do Supabase.');
       if (form.adminPassword.length < 6) throw new Error('A senha do admin precisa ter ao menos 6 caracteres.');
 
@@ -140,26 +159,30 @@ const SetupWizard = () => {
                 <Label htmlFor="anonKey">Chave anon / publishable <span className="text-slate-400">(Settings → API)</span></Label>
                 <Input id="anonKey" placeholder="eyJhbGci..." value={form.anonKey} onChange={set('anonKey')} disabled={busy} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="accessToken">Token de acesso <span className="text-slate-400">(account/tokens)</span></Label>
-                <Input id="accessToken" type="password" placeholder="sbp_..." value={form.accessToken} onChange={set('accessToken')} disabled={busy} />
-                <p className="text-xs text-slate-400">Usado só agora para criar o banco. Não fica salvo.</p>
-              </div>
+              {mode === 'full' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="accessToken">Token de acesso <span className="text-slate-400">(account/tokens)</span></Label>
+                    <Input id="accessToken" type="password" placeholder="sbp_..." value={form.accessToken} onChange={set('accessToken')} disabled={busy} />
+                    <p className="text-xs text-slate-400">Usado só agora para criar o banco. Não fica salvo.</p>
+                  </div>
 
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="adminName">Nome do administrador</Label>
-                  <Input id="adminName" placeholder="Seu nome" value={form.adminName} onChange={set('adminName')} disabled={busy} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminEmail">E-mail (login)</Label>
-                  <Input id="adminEmail" type="email" placeholder="voce@email.com" value={form.adminEmail} onChange={set('adminEmail')} disabled={busy} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminPassword">Senha</Label>
-                  <Input id="adminPassword" type="password" placeholder="mín. 6 caracteres" value={form.adminPassword} onChange={set('adminPassword')} disabled={busy} />
-                </div>
-              </div>
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="adminName">Nome do administrador</Label>
+                      <Input id="adminName" placeholder="Seu nome" value={form.adminName} onChange={set('adminName')} disabled={busy} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminEmail">E-mail (login)</Label>
+                      <Input id="adminEmail" type="email" placeholder="voce@email.com" value={form.adminEmail} onChange={set('adminEmail')} disabled={busy} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminPassword">Senha</Label>
+                      <Input id="adminPassword" type="password" placeholder="mín. 6 caracteres" value={form.adminPassword} onChange={set('adminPassword')} disabled={busy} />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {logs.length > 0 && (
                 <div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-xs space-y-1 text-slate-600 dark:text-slate-300">
@@ -175,8 +198,17 @@ const SetupWizard = () => {
               )}
 
               <Button type="submit" className="w-full" disabled={busy}>
-                {busy ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Configurando...</>) : 'Configurar e entrar'}
+                {busy ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {mode === 'connect' ? 'Conectando...' : 'Configurando...'}</>)
+                  : (mode === 'connect' ? 'Conectar e entrar' : 'Configurar e entrar')}
               </Button>
+
+              <button type="button" disabled={busy}
+                onClick={() => { setError(''); setMode(mode === 'full' ? 'connect' : 'full'); }}
+                className="w-full text-center text-xs text-slate-500 hover:text-slate-700 disabled:opacity-50">
+                {mode === 'full'
+                  ? 'Já tenho o banco configurado — só conectar este computador'
+                  : '← Primeira instalação (criar o banco)'}
+              </button>
             </form>
           )}
         </div>
