@@ -1,18 +1,19 @@
 # Imagens do README
 
-Coloque aqui os prints reais do sistema para aparecerem no README principal.
+O `README.md` (raiz) já referencia os arquivos abaixo. Faça o upload dos prints
+**com estes nomes exatos** nesta pasta `docs/` para eles aparecerem:
 
-## Como adicionar
-1. Tire um print do sistema (ex.: Dashboard, PDV).
-2. Salve nesta pasta com um nome simples, ex.: `dashboard.png`, `pdv.png`.
-3. No `README.md` (raiz), referencie a imagem:
-   ```markdown
-   ![SGA - Dashboard](docs/dashboard.png)
-   ```
-   (no topo do README já existe uma linha comentada pronta — é só descomentar.)
+| Arquivo | Tela |
+|---|---|
+| `dashboard.png` | Dashboard (também usado como banner no topo) |
+| `produtos.png` | Produtos |
+| `estoque.png` | Controle de Estoque |
+| `configuracoes.png` | Configurações |
 
-## Sugestões de telas
-- `dashboard.png` — visão geral
-- `pdv.png` — ponto de venda
-- `relatorios.png` — relatórios
-- `financeiro.png` — financeiro
+## Como subir (pelo GitHub, sem terminal)
+1. Abra a pasta `docs/` no GitHub.
+2. **Add file → Upload files**.
+3. Arraste os 4 prints, renomeados como acima.
+4. **Commit changes**.
+
+Pronto — as imagens aparecem no README automaticamente.

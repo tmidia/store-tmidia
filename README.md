@@ -10,13 +10,7 @@
 ![Electron](https://img.shields.io/badge/Electron-Desktop-47848F?logo=electron&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)
 
-<!--
-  📸 Telas do sistema:
-  Salve um print real (ex.: o Dashboard ou o PDV) em docs/dashboard.png
-  e descomente a linha abaixo para ele aparecer aqui no topo:
-
-  ![SGA - Dashboard](docs/dashboard.png)
--->
+![SGA - Dashboard](docs/dashboard.png)
 
 ---
 
@@ -40,8 +34,12 @@ Você pode usá-lo direto no **navegador** ou instalar o **aplicativo de caixa**
 com impressão de cupom na impressora térmica.
 
 ## Telas
-> Para exibir prints reais aqui: salve as imagens na pasta [`docs/`](docs/) (ex.: `docs/dashboard.png`,
-> `docs/pdv.png`) e referencie com `![Dashboard](docs/dashboard.png)`. Veja [docs/README.md](docs/README.md).
+
+| Produtos | Estoque |
+|---|---|
+| ![Produtos](docs/produtos.png) | ![Estoque](docs/estoque.png) |
+| **Configurações** | **Dashboard** |
+| ![Configurações](docs/configuracoes.png) | ![Dashboard](docs/dashboard.png) |
 
 ## Por que escolher o SGA?
 - **Instalação em minutos:** deploy na Vercel + assistente que configura tudo sozinho.
