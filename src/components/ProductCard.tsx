@@ -2,12 +2,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Package, Edit, Trash2 } from 'lucide-react';
+import { DollarSign, Package, Edit, Trash2, Barcode } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { printProductLabel } from '@/utils/barcodeLabel';
 
 interface Product {
   id: string;
   name: string;
   code: string;
+  barcode?: string | null;
   description?: string | null;
   category_id?: string | null;
   supplier_id?: string | null;
@@ -33,6 +36,17 @@ const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => {
   };
 
   const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock);
+
+  const handlePrintLabel = () => {
+    const ok = printProductLabel(product);
+    if (!ok) {
+      toast({
+        title: 'Sem código de barras',
+        description: 'Gere um código de barras no cadastro do produto antes de imprimir a etiqueta.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <Card className="border-0 shadow-md bg-white hover:shadow-lg transition-shadow">
@@ -87,18 +101,26 @@ const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => {
         </div>
 
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="flex-1"
             onClick={() => onEdit(product)}
           >
             <Edit className="w-4 h-4 mr-1" />
             Editar
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
+            title="Imprimir etiqueta com código de barras"
+            onClick={handlePrintLabel}
+          >
+            <Barcode className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => onDelete(product.id)}
           >

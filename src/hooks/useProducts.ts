@@ -7,6 +7,7 @@ interface Product {
   id: string;
   name: string;
   code: string;
+  barcode?: string | null;
   description?: string | null;
   category_id?: string | null;
   subcategory_id?: string | null;
