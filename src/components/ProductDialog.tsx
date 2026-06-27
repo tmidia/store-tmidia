@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { capitalizeWords } from '@/utils/textUtils';
+import { generateInternalCode, generateEAN13 } from '@/utils/productCode';
 import type { Database } from '@/integrations/supabase/types';
 import ProductBasicInfo from './product-dialog/ProductBasicInfo';
 import ProductDescription from './product-dialog/ProductDescription';
@@ -26,6 +27,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    barcode: '',
     description: '',
     category_id: '',
     subcategory_id: '',
@@ -52,6 +54,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
       setFormData({
         name: product.name || '',
         code: product.code || '',
+        barcode: (product as any).barcode || '',
         description: product.description || '',
         category_id: product.category_id || '',
         subcategory_id: product.subcategory_id || '',
@@ -113,7 +116,8 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
   const resetForm = () => {
     setFormData({
       name: '',
-      code: '',
+      code: generateInternalCode(),
+      barcode: generateEAN13(),
       description: '',
       category_id: '',
       subcategory_id: '',
@@ -160,6 +164,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
       const productData = {
         name: formData.name,
         code: formData.code,
+        barcode: formData.barcode || null,
         description: formData.description || null,
         category_id: formData.category_id || null,
         subcategory_id: formData.subcategory_id || null,
@@ -184,7 +189,7 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Editar Produto' : 'Novo Produto'}
@@ -197,13 +202,9 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
           <ProductBasicInfo
             name={formData.name}
             code={formData.code}
+            barcode={formData.barcode}
             handleInputChange={handleInputChange}
             setFormData={setFormData}
-          />
-
-          <ProductDescription
-            description={formData.description}
-            handleInputChange={handleInputChange}
           />
 
           <ProductCategorization
@@ -214,19 +215,28 @@ const ProductDialog = ({ isOpen, onClose, product, onSave }: ProductDialogProps)
             setFormData={setFormData}
           />
 
-          <ProductPricing
-            formData={formData}
-            useMargin={useMargin}
-            setUseMargin={setUseMargin}
-            setFormData={setFormData}
-            calculateMarginFromPrices={calculateMarginFromPrices}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            <div className="space-y-4">
+              <ProductDescription
+                description={formData.description}
+                handleInputChange={handleInputChange}
+              />
 
-          <ProductStockInfo
-            stock_quantity={formData.stock_quantity}
-            minimum_stock={formData.minimum_stock}
-            setFormData={setFormData}
-          />
+              <ProductStockInfo
+                stock_quantity={formData.stock_quantity}
+                minimum_stock={formData.minimum_stock}
+                setFormData={setFormData}
+              />
+            </div>
+
+            <ProductPricing
+              formData={formData}
+              useMargin={useMargin}
+              setUseMargin={setUseMargin}
+              setFormData={setFormData}
+              calculateMarginFromPrices={calculateMarginFromPrices}
+            />
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

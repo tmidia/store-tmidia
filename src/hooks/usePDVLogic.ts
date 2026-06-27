@@ -58,7 +58,8 @@ export const usePDVLogic = () => {
     const filtered = produtos.filter(produto => {
       const nomeMatch = produto.name?.toLowerCase().includes(termoBusca);
       const codigoMatch = produto.code?.toLowerCase().includes(termoBusca);
-      return nomeMatch || codigoMatch;
+      const barcodeMatch = (produto as any).barcode?.toLowerCase().includes(termoBusca);
+      return nomeMatch || codigoMatch || barcodeMatch;
     });
     
     console.log('🔍 Produtos filtrados:', { 
