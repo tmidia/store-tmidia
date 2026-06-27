@@ -1,9 +1,10 @@
 
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthWrapper } from "@/components/layout/AuthWrapper";
 import { MainLayout } from "@/components/layout/MainLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { isElectron } from "@/lib/platform";
 
 // Páginas carregadas sob demanda (code-splitting) para reduzir o bundle inicial.
 const Login = lazy(() => import("@/pages/Login"));
@@ -34,7 +35,32 @@ const RouteFallback = () => (
   </div>
 );
 
+// No app desktop (caixa), o sistema é exclusivamente o PDV. Todas as demais
+// telas (dashboard, cadastros, financeiro, relatórios, etc.) ficam apenas na
+// versão web. Qualquer rota fora do PDV é redirecionada de volta ao PDV.
+const ElectronRoutes = () => (
+  <Suspense fallback={<RouteFallback />}>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/pdv" element={
+        <AuthWrapper>
+          <ProtectedRoute requiredPermission="pdv">
+            <MainLayout>
+              <PDV />
+            </MainLayout>
+          </ProtectedRoute>
+        </AuthWrapper>
+      } />
+      <Route path="*" element={<Navigate to="/pdv" replace />} />
+    </Routes>
+  </Suspense>
+);
+
 export const AppRoutes = () => {
+  if (isElectron()) {
+    return <ElectronRoutes />;
+  }
+
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>

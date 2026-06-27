@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Palette, ArrowLeft } from 'lucide-react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 import { useNavigate } from 'react-router-dom';
+import { isElectron } from '@/lib/platform';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
@@ -64,16 +65,19 @@ const PDVHeader = ({ caixaAberto, onAbrirCaixa, onFecharCaixa, onToggleTheme }: 
       </Dialog>
 
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => navigate('/')}
-          className={`shrink-0 ${classicBtnClasses}`}
-          title="Voltar ao Dashboard"
-          disabled={caixaAberto}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
+        {/* No app desktop o sistema é só o PDV — não há para onde "voltar". */}
+        {!isElectron() && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            className={`shrink-0 ${classicBtnClasses}`}
+            title="Voltar ao Dashboard"
+            disabled={caixaAberto}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        )}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate group-[.pdv-classic]:text-white">PDV</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base group-[.pdv-classic]:text-slate-300">Ponto de Venda</p>
